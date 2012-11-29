@@ -100,7 +100,7 @@ class GaptoolServer < Sinatra::Base
       end
     end
     data.merge!("hostname" => hostname)
-    data.merge!("apps" => @apps)
+    data.merge!("apps" => @apps.to_json)
     data.merge!("instance" => @instance.id)
     hash2redis("host:#{data['role']}:#{data['environment']}:#{@instance.id}", data)
     @json = {
