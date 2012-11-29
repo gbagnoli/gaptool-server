@@ -93,15 +93,16 @@ class GaptoolServer < Sinatra::Base
     @instance = @ec2.instances[@redis.get("instance:#{data['role']}:#{data['environment']}:#{data['secret']}")]
     hostname = @instance.dns_name
     delete = @redis.del("instance:#{data['role']}:#{data['environment']}:#{data['secret']}")
-    data.merge!("hostname" => hostname)
-    data.merge!("instance" => @instance.id)
-    hash2redis("host:#{data['role']}:#{data['environment']}:#{@instance.id}", data)
     @apps = Array.new
     @redis.keys("app:*").each do |app|
       if @redis.hget(app, 'role') == data['role']
         @apps << app.gsub('app:', '')
       end
     end
+    data.merge!("hostname" => hostname)
+    data.merge!("apps" => @apps)
+    data.merge!("instance" => @instance.id)
+    hash2redis("host:#{data['role']}:#{data['environment']}:#{@instance.id}", data)
     @json = {
       'hostname' => hostname,
       'recipe' => 'init',
