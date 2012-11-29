@@ -21,6 +21,8 @@ Jeweler::Tasks.new do |gem|
   gem.description = %Q{gaptool-server for managing cloud resources}
   gem.email = "m@mdb.io"
   gem.authors = ["Matt Bailey"]
+  gem.executables = ['gaptool-server']
+  gem.default_executable = 'gaptool-server'
   # dependencies defined in Gemfile
 end
 Jeweler::RubygemsDotOrgTasks.new

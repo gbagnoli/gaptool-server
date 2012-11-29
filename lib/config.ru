@@ -10,6 +10,6 @@ require 'aws-sdk'
 require 'openssl'
 require 'net/ssh'
 
-require 'lib/gaptool-server.rb'
+require 'gaptool-server/app.rb'
 
 run GaptoolServer
