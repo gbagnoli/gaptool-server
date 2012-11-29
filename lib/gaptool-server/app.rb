@@ -58,7 +58,7 @@ class GaptoolServer < Sinatra::Base
       :instance_type => data['itype'],
       :key_name => "gaptool",
       :security_group_ids => @redis.hget("sg:#{data['zone'].chop}", "#{data['role']}:#{data['environment']}"),
-      :user_data => "#!/bin/bash\ncurl --silent -H 'X-GAPTOOL-USER: #{env['HTTP_X_GAPTOOL_USER']}' -H 'X-GAPTOOL-KEY: #{env['HTTP_X_GAPTOOL_USER']}' #{@redis.hget('config', 'url')}/register -X PUT --data '#{data.to_json}' | bash"
+      :user_data => "#!/bin/bash\ncurl --silent -H 'X-GAPTOOL-USER: #{env['HTTP_X_GAPTOOL_USER']}' -H 'X-GAPTOOL-KEY: #{env['HTTP_X_GAPTOOL_KEY']}' #{@redis.hget('config', 'url')}/register -X PUT --data '#{data.to_json}' | bash"
     )
     # Add host tag
     instance.add_tag('Name', :value => "#{data['role']}-#{data['environment']}-#{instance.id}")
