@@ -1,13 +1,4 @@
-require 'sinatra/base'
-require 'sinatra'
-require 'json'
-require 'redis'
-require 'yaml'
-require 'erb'
-require 'aws-sdk'
-require 'openssl'
-require 'net/ssh'
-
+#!/usr/bin/env ruby
 ENV['REDIS_HOST'] = 'localhost' unless ENV['REDIS_HOST']
 ENV['REDIS_PORT'] = '6379' unless ENV['REDIS_PORT']
 ENV['REDIS_PASS'] = nil unless ENV['REDIS_PASS']
