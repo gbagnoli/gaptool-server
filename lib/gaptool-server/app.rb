@@ -91,8 +91,8 @@ class GaptoolServer < Sinatra::Base
     data.merge!("instance" => @instance.id)
     hash2redis("host:#{data['role']}:#{data['environment']}:#{@instance.id}", data)
     @apps = Array.new
-    redis.keys("app:*").each do |app|
-      if redis.hget(app, 'role') == data['role']
+    @redis.keys("app:*").each do |app|
+      if @redis.hget(app, 'role') == data['role']
         @apps << app.gsub('app:', '')
       end
     end
