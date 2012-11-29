@@ -96,6 +96,7 @@ class GaptoolServer < Sinatra::Base
       'chefrepo' => @redis.hget('config', 'chefrepo'),
       'chefbranch' => @redis.hget('config', 'chefbranch'),
       'identity' => @redis.hget('config','initkey'),
+      'appuser' => @redis.hget('config','appuser'),
     }.to_json
     erb :init
   end
