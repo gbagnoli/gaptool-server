@@ -10,6 +10,8 @@ require 'aws-sdk'
 require 'openssl'
 require 'net/ssh'
 
+$:.unshift(File.expand_path(File.join(File.dirname(__FILE__), "lib")))
+
 require 'gaptool-server/app.rb'
 
 run GaptoolServer
