@@ -4,5 +4,31 @@ require 'thin'
 require 'trollop'
 require 'gaptool-server/app.rb'
 
-# Run with thin
-Thin::Runner.new(ARGV).run!
+# Hijack the thin module to set default options to run in the right place
+module Thin
+  class GaptoolRunner < Thin::Runner
+    def initialize(argv)
+      @argv = argv
+
+      # Default options values
+      @options = {
+        :chdir                => File.expand_path('..', File.dirname(__FILE__)),
+        :environment          => ENV['RACK_ENV'] || 'development',
+        :address              => '0.0.0.0',
+        :port                 => Server::DEFAULT_PORT,
+        :timeout              => Server::DEFAULT_TIMEOUT,
+        :log                  => 'log/thin.log',
+        :pid                  => 'tmp/pids/thin.pid',
+        :max_conns            => Server::DEFAULT_MAXIMUM_CONNECTIONS,
+        :max_persistent_conns => Server::DEFAULT_MAXIMUM_PERSISTENT_CONNECTIONS,
+        :require              => [],
+        :wait                 => Controllers::Cluster::DEFAULT_WAIT_TIME
+      }
+
+      parse!
+    end
+  end
+end
+
+# Run with thin, with thin args
+Thin::GaptoolRunner.new(ARGV).run!
