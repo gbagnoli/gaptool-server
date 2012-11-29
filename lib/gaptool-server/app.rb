@@ -128,9 +128,9 @@ class GaptoolServer < Sinatra::Base
   end
 
   get '/apps' do
-    out = Array.new
+    out = Hash.new
     @redis.keys("app:*").each do |app|
-      out << @redis.hgetall(app)
+      out.merge! {app => @redis.hgetall(app)}
     end
     out.to_json
   end
