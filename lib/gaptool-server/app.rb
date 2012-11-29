@@ -84,6 +84,7 @@ class GaptoolServer < Sinatra::Base
     hostname = @instance.dns_name
     delete = @redis.del("hostname:#{data['role']}:#{data['environment']}:#{data['secret']}")
     data.merge!("hostname" => hostname)
+    data.merge!("instance" => @instance.id)
     hash2redis("host:#{data['role']}:#{data['environment']}:#{@instance.id}", data)
     @json = {
       'hostname' => hostname,
