@@ -1,10 +1,8 @@
 #!/usr/bin/env ruby
+require 'rubygems'
+require 'thin'
+require 'trollop'
+require 'gaptool-server/app.rb'
 
-begin
-  require 'config.ru'
-rescue
-  require 'rubygems'
-  path = File.expand_path '../../lib', __FILE__
-  $:.unshift(path) if File.directory?(path) && !$:.include?(path)
-  require 'config.ru'
-end
+# Run with thin
+Thin::Runner.new(ARGV).run!
