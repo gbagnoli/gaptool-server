@@ -83,6 +83,7 @@ class GaptoolServer < Sinatra::Base
     rescue
       error 404
     end
+    out.to_json
   end
 
   put '/register' do
