@@ -15,6 +15,10 @@ ENV['REDIS_PORT'] = '6379' unless ENV['REDIS_PORT']
 ENV['REDIS_PASS'] = nil unless ENV['REDIS_PASS']
 
 class GaptoolServer < Sinatra::Base
+  # Don't generate fancy HTML for stack traces.
+  disable :show_exceptions
+  # Allow errors to get out of the app so Cucumber can display them.
+  enable :raise_errors
 
   def hash2redis( key, hash )
     hash.keys.each do |hkey|
