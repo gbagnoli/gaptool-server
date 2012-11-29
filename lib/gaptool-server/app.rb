@@ -130,7 +130,7 @@ class GaptoolServer < Sinatra::Base
   get '/apps' do
     out = Array.new
     @redis.keys("app:*").each do |app|
-      out << @redis.hgetall(host)
+      out << @redis.hgetall(app)
     end
     out.to_json
   end
