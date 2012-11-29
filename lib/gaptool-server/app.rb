@@ -62,7 +62,7 @@ class GaptoolServer < Sinatra::Base
     @ec2 = AWS::EC2.new
     @instance = @ec2.instances[data['id']]
     @instance.terminate
-    @redis.del(@redis.keys("*#{data['id']}"))
+    @redis.del(@redis.keys("*#{data['id']}")) || "No such instance"
   end
 
   put '/register' do
