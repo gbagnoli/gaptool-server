@@ -73,7 +73,7 @@ namespace :config do
     ]
 
     if delete == 'y'
-      @redis.keys('*') do |key|
+      @redis.keys("*") do |key|
         @redis.del key
       end
     end
@@ -82,7 +82,8 @@ namespace :config do
 
   task :dump do
     dump = Hash.new
-    @redis.keys('*') do |key|
+    @redis.keys("*").each do |key|
+      puts key
       if @redis.type(key) == 'hash'
         dump.merge!({ key => @redis.hgetall(key) })
       else
