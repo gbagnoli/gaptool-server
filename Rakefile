@@ -55,7 +55,11 @@ namespace :config do
   @redis = Redis.new(:host => ENV['REDIS_HOST'], :port => ENV['REDIS_PORT'], :password => ENV['REDIS_PASS'])
   puts "env vars REDIS_HOST, REDIS_PORT, and REDIS_PASS should all be set or\ndefaults of localhost:6379 with no password will be used"
 
-  task :seed do
+  task :import do
+    data = YAML::Parser($stdin)
+    puts data
+  end
+  task :delete do
     print "Delete ALL existing data (y/N)? "
     delete = gets.chomp
     hashes = [
