@@ -45,3 +45,50 @@ Rake::RDocTask.new do |rdoc|
   rdoc.rdoc_files.include('README*')
   rdoc.rdoc_files.include('lib/**/*.rb')
 end
+
+namespace :config do
+  require 'redis'
+  require 'yaml'
+  ENV['REDIS_HOST'] = 'localhost' unless ENV['REDIS_HOST']
+  ENV['REDIS_PORT'] = '6379' unless ENV['REDIS_PORT']
+  ENV['REDIS_PASS'] = nil unless ENV['REDIS_PASS']
+  @redis = Redis.new(:host => ENV['REDIS_HOST'], :port => ENV['REDIS_PORT'], :password => ENV['REDIS_PASS'])
+  puts "env vars REDIS_HOST, REDIS_PORT, and REDIS_PASS should all be set or\ndefaults of localhost:6379 with no password will be used"
+
+  task :seed do
+    print "Delete ALL existing data (y/N)? "
+    delete = gets.chomp
+    hashes = [
+      'sg:us-east-1',
+      'sg:us-west-1',
+      'sg:us-west-2',
+      'sg:ap-northeast-1',
+      'sg:ap-southeast-1',
+      'sg:ap-southeast-2',
+      'sg:eu-west-1',
+      'sg:sa-east-1',
+      'config',
+      'amis',
+      'users',
+    ]
+
+    if delete == 'y'
+      @redis.keys('*') do |key|
+        @redis.del key
+      end
+    end
+
+  end
+
+  task :dump do
+    dump = Hash.new
+    @redis.keys('*') do |key|
+      if @redis.type(key) == 'hash'
+        dump.merge! { key => @redis.hgetall(key) }
+      else
+        dump.merge! { key => @redis.get(key) }
+      end
+    end
+    puts dump.to_yaml
+
+end
