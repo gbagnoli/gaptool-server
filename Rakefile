@@ -84,9 +84,9 @@ namespace :config do
     dump = Hash.new
     @redis.keys('*') do |key|
       if @redis.type(key) == 'hash'
-        dump.merge! { key => @redis.hgetall(key) }
+        dump.merge!({ key => @redis.hgetall(key) })
       else
-        dump.merge! { key => @redis.get(key) }
+        dump.merge!({ key => @redis.get(key) })
       end
     end
     puts dump.to_yaml
