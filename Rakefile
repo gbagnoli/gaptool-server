@@ -90,5 +90,6 @@ namespace :config do
       end
     end
     puts dump.to_yaml
+  end
 
 end
