@@ -46,7 +46,7 @@ class GaptoolServer < Sinatra::Base
   end
 
   def gt_securitygroup(role, environment, zone)
-    AWS.config(:access_key_id => @redis.hget('config', 'aws_id'), :secret_access_key => @redis.hget('config', 'aws_secret'), :ec2_endpoint => "ec2.#{data['zone'].chop}.amazonaws.com")
+    AWS.config(:access_key_id => @redis.hget('config', 'aws_id'), :secret_access_key => @redis.hget('config', 'aws_secret'), :ec2_endpoint => "ec2.#{zone.chop}.amazonaws.com")
     @ec2 = AWS::EC2.new
     groupname = "#{role}-#{environment}"
     default_list = [ 22 ]
