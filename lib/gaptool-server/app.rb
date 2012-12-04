@@ -72,7 +72,7 @@ class GaptoolServer < Sinatra::Base
     # create shared secret to reference in /register
     @secret = (0...8).map{65.+(rand(26)).chr}.join
     data.merge!("secret" => @secret)
-    sgid = gt_securitygroup(date['role'], data['environment'])
+    sgid = gt_securitygroup(data['role'], data['environment'])
     instance = @ec2.instances.create(
       :image_id => @redis.hget("amis", data['zone'].chop),
       :availability_zone => data['zone'],
