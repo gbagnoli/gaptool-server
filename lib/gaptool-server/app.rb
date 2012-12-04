@@ -45,7 +45,7 @@ class GaptoolServer < Sinatra::Base
     return @key.to_pem
   end
 
-  def gt_securitygroup(role, environment)
+  def gt_securitygroup(role, environment, zone)
     AWS.config(:access_key_id => @redis.hget('config', 'aws_id'), :secret_access_key => @redis.hget('config', 'aws_secret'), :ec2_endpoint => "ec2.#{data['zone'].chop}.amazonaws.com")
     @ec2 = AWS::EC2.new
     groupname = "#{role}-#{environment}"
@@ -72,7 +72,7 @@ class GaptoolServer < Sinatra::Base
     # create shared secret to reference in /register
     @secret = (0...8).map{65.+(rand(26)).chr}.join
     data.merge!("secret" => @secret)
-    sgid = gt_securitygroup(data['role'], data['environment'])
+    sgid = gt_securitygroup(data['role'], data['environment'], data['zone'])
     instance = @ec2.instances.create(
       :image_id => @redis.hget("amis", data['zone'].chop),
       :availability_zone => data['zone'],
