@@ -12,6 +12,7 @@ group :development do
   gem "jeweler", "~> 1.8.4"
   gem "simplecov", ">= 0"
   gem "shotgun", ">= 0"
+  gem "pry", ">= 0"
 end
 
 gem 'sinatra'

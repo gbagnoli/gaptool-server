@@ -46,6 +46,35 @@ Rake::RDocTask.new do |rdoc|
   rdoc.rdoc_files.include('lib/**/*.rb')
 end
 
+namespace :dev do
+  require 'pry'
+  require 'yaml'
+  require 'redis'
+  require 'aws-sdk'
+  YAML::ENGINE.yamler='syck'
+  task :shell do
+    $stderr.puts "env vars REDIS_HOST, REDIS_PORT, and REDIS_PASS should all be set or\ndefaults of localhost:6379 with no password will be used"
+    ENV['REDIS_HOST'] = 'localhost' unless ENV['REDIS_HOST']
+    ENV['REDIS_PORT'] = '6379' unless ENV['REDIS_PORT']
+    ENV['REDIS_PASS'] = nil unless ENV['REDIS_PASS']
+    @redis = Redis.new(:host => ENV['REDIS_HOST'], :port => ENV['REDIS_PORT'], :password => ENV['REDIS_PASS'])
+    $stderr.puts "@redis available"
+    if @redis.hget('config', 'aws_id' ) && @redis.hget('config', 'aws_secret')
+      if !ENV['AWS_ZONE']
+        print "Shortname aws zone? "
+        zone = $stdin.gets.chomp
+      else
+        zone = ENV['AWS_ZONE']
+      end
+      AWS.config(:access_key_id => @redis.hget('config', 'aws_id'), :secret_access_key => @redis.hget('config', 'aws_secret'), :ec2_endpoint => "ec2.#{zone}.amazonaws.com")
+      @ec2 = AWS::EC2.new
+      $stderr.puts "@ec2 available"
+    end
+    binding.pry
+    puts "exiting"
+  end
+end
+
 namespace :config do
   require 'redis'
   require 'yaml'
@@ -88,7 +117,6 @@ namespace :config do
   task :dump do
     dump = Hash.new
     @redis.keys("*").each do |key|
-      puts key
       if @redis.type(key) == 'hash'
         dump.merge!({ key => @redis.hgetall(key) })
       else

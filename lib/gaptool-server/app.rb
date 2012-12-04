@@ -36,13 +36,29 @@ class GaptoolServer < Sinatra::Base
     @key = OpenSSL::PKey::RSA.new 2048
     @pubkey = "#{@key.ssh_type} #{[@key.to_blob].pack('m0')} GAPTOOL_GENERATED_KEY"
     ENV['SSH_AUTH_SOCK'] = ''
-    Net::SSH.start(host, 'admin', :key_data => [@redis.get('gaptoolkey')], :config => false, :keys_only => true, :paranoid => false) do |ssh|
+    Net::SSH.start(host, 'admin', :key_data => [@redis.hget('config', 'gaptoolkey')], :config => false, :keys_only => true, :paranoid => false) do |ssh|
       ssh.exec! "grep -v GAPTOOL_GENERATED_KEY ~/.ssh/authorized_keys > /tmp/pubkeys"
       ssh.exec! "cat /tmp/pubkeys > ~/.ssh/authorized_keys"
       ssh.exec! "rm /tmp/pubkeys"
       ssh.exec! "echo #{@pubkey} >> ~/.ssh/authorized_keys"
     end
     return @key.to_pem
+  end
+
+  def gt_securitygroup(role, environment)
+    AWS.config(:access_key_id => @redis.hget('config', 'aws_id'), :secret_access_key => @redis.hget('config', 'aws_secret'), :ec2_endpoint => "ec2.#{data['zone'].chop}.amazonaws.com")
+    @ec2 = AWS::EC2.new
+    groupname = "#{role}-#{environment}"
+    default_list = [ 22 ]
+    @ec2.security_group.each do |group|
+      if group.name == "#{role}-#{environment}"
+        return group.id
+      end
+    end
+    internet = ['0.0.0.0/0']
+    sg = @ec2.security.groups_create("#{role}-#{environment}")
+    sg.authorize_ingress :tcp, 22, *internet
+    return sg.id
   end
 
   get '/' do
@@ -56,6 +72,7 @@ class GaptoolServer < Sinatra::Base
     # create shared secret to reference in /register
     @secret = (0...8).map{65.+(rand(26)).chr}.join
     data.merge!("secret" => @secret)
+    sgid = gt_securitygroup(date['role'], data['environment'])
     instance = @ec2.instances.create(
       :image_id => @redis.hget("amis", data['zone'].chop),
       :availability_zone => data['zone'],
