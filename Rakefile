@@ -54,6 +54,7 @@ namespace :config do
   ENV['REDIS_PASS'] = nil unless ENV['REDIS_PASS']
   @redis = Redis.new(:host => ENV['REDIS_HOST'], :port => ENV['REDIS_PORT'], :password => ENV['REDIS_PASS'])
   $stderr.puts "env vars REDIS_HOST, REDIS_PORT, and REDIS_PASS should all be set or\ndefaults of localhost:6379 with no password will be used"
+  YAML::ENGINE.yamler='syck'
 
   task :import do
     data = YAML::Parser($stdin)
