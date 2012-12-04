@@ -50,13 +50,13 @@ class GaptoolServer < Sinatra::Base
     @ec2 = AWS::EC2.new
     groupname = "#{role}-#{environment}"
     default_list = [ 22 ]
-    @ec2.security_group.each do |group|
+    @ec2.security_groups.each do |group|
       if group.name == "#{role}-#{environment}"
         return group.id
       end
     end
     internet = ['0.0.0.0/0']
-    sg = @ec2.security.groups_create("#{role}-#{environment}")
+    sg = @ec2.security_groups.create("#{role}-#{environment}")
     sg.authorize_ingress :tcp, 22, *internet
     return sg.id
   end
