@@ -92,11 +92,11 @@ class GaptoolServer < Sinatra::Base
         :user_data => "#!/bin/bash\ncurl --silent -H 'X-GAPTOOL-USER: #{env['HTTP_X_GAPTOOL_USER']}' -H 'X-GAPTOOL-KEY: #{env['HTTP_X_GAPTOOL_KEY']}' #{@redis.hget('config', 'url')}/register -X PUT --data '#{data.to_json}' | bash",
         :block_device_mappings => {
           "/dev/sdf" => {
-            :volume_size => data['mirror'],
+            :volume_size => data['mirror'].to_i,
             :delete_on_termination => false
           },
           "/dev/sdg" => {
-            :volume_size => data['mirror'],
+            :volume_size => data['mirror'].to_i,
             :delete_on_termination => false
           }
         }
