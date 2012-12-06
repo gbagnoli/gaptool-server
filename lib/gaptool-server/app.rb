@@ -82,14 +82,35 @@ class GaptoolServer < Sinatra::Base
     @secret = (0...8).map{65.+(rand(26)).chr}.join
     data.merge!("secret" => @secret)
     sgid = gt_securitygroup(data['role'], data['environment'], data['zone'])
-    instance = @ec2.instances.create(
-      :image_id => @redis.hget("amis", data['zone'].chop),
-      :availability_zone => data['zone'],
-      :instance_type => data['itype'],
-      :key_name => "gaptool",
-      :security_group_ids => sgid,
-      :user_data => "#!/bin/bash\ncurl --silent -H 'X-GAPTOOL-USER: #{env['HTTP_X_GAPTOOL_USER']}' -H 'X-GAPTOOL-KEY: #{env['HTTP_X_GAPTOOL_KEY']}' #{@redis.hget('config', 'url')}/register -X PUT --data '#{data.to_json}' | bash"
-    )
+    if data['mirror']
+      instance = @ec2.instances.create(
+        :image_id => @redis.hget("amis", data['zone'].chop),
+        :availability_zone => data['zone'],
+        :instance_type => data['itype'],
+        :key_name => "gaptool",
+        :security_group_ids => sgid,
+        :user_data => "#!/bin/bash\ncurl --silent -H 'X-GAPTOOL-USER: #{env['HTTP_X_GAPTOOL_USER']}' -H 'X-GAPTOOL-KEY: #{env['HTTP_X_GAPTOOL_KEY']}' #{@redis.hget('config', 'url')}/register -X PUT --data '#{data.to_json}' | bash"
+        :block_device_mappings => {
+          "/dev/sdf" => {
+            :volume_size => data['mirror'],
+            :delete_on_termination => false
+          },
+          "/dev/sdg" => {
+            :volume_size => data['mirror'],
+            :delete_on_termination => false
+          }
+        }
+      )
+    else
+      instance = @ec2.instances.create(
+        :image_id => @redis.hget("amis", data['zone'].chop),
+        :availability_zone => data['zone'],
+        :instance_type => data['itype'],
+        :key_name => "gaptool",
+        :security_group_ids => sgid,
+        :user_data => "#!/bin/bash\ncurl --silent -H 'X-GAPTOOL-USER: #{env['HTTP_X_GAPTOOL_USER']}' -H 'X-GAPTOOL-KEY: #{env['HTTP_X_GAPTOOL_KEY']}' #{@redis.hget('config', 'url')}/register -X PUT --data '#{data.to_json}' | bash"
+      )
+    end
     # Add host tag
     instance.add_tag('Name', :value => "#{data['role']}-#{data['environment']}-#{instance.id}")
     # Create temporary redis entry for /register to pull the instance id
