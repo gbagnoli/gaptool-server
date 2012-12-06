@@ -65,6 +65,15 @@ class GaptoolServer < Sinatra::Base
     "You must be lost. Read the instructions."
   end
 
+  post '/regenhosts' do
+    data = JSON.parse request.body.read
+    AWS.config(:access_key_id => @redis.hget('config', 'aws_id'), :secret_access_key => @redis.hget('config', 'aws_secret'), :ec2_endpoint => "ec2.#{data['zone'].chop}.amazonaws.com")
+    @ec2 = AWS::EC2.new
+    @redis.keys("host:*").each do |host|
+      @redis.hset(host, 'hostname', @e2.instances[@redis.hget(host, 'instance')].dns_name)
+    end
+  end
+
   post '/init' do
     data = JSON.parse request.body.read
     AWS.config(:access_key_id => @redis.hget('config', 'aws_id'), :secret_access_key => @redis.hget('config', 'aws_secret'), :ec2_endpoint => "ec2.#{data['zone'].chop}.amazonaws.com")
