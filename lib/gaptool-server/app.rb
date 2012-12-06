@@ -67,7 +67,7 @@ class GaptoolServer < Sinatra::Base
 
   post '/regenhosts' do
     data = JSON.parse request.body.read
-    AWS.config(:access_key_id => @redis.hget('config', 'aws_id'), :secret_access_key => @redis.hget('config', 'aws_secret'), :ec2_endpoint => "ec2.#{data['zone'].chop}.amazonaws.com")
+    AWS.config(:access_key_id => @redis.hget('config', 'aws_id'), :secret_access_key => @redis.hget('config', 'aws_secret'), :ec2_endpoint => "ec2.#{data['zone']}.amazonaws.com")
     @ec2 = AWS::EC2.new
     @redis.keys("host:*").each do |host|
       @redis.hset(host, 'hostname', @e2.instances[@redis.hget(host, 'instance')].dns_name)
