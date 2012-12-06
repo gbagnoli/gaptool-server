@@ -72,7 +72,7 @@ class GaptoolServer < Sinatra::Base
     @redis.keys("host:*").each do |host|
       out = @redis.hset(host, 'hostname', @ec2.instances[@redis.hget(host, 'instance')].dns_name)
     end
-    out.to_json
+    "{\"regen\":\"running\"}"
   end
 
   post '/init' do
