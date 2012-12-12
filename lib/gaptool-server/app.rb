@@ -107,7 +107,7 @@ class GaptoolServer < Sinatra::Base
     "You must be lost. Read the instructions."
   end
 
-  post '/servicebalance/:role/:environment' do
+  get '/servicebalance/:role/:environment' do
     balanceservices(params[:role], params[:environment])
   end
 
