@@ -86,6 +86,7 @@ class GaptoolServer < Sinatra::Base
     @runnable.each do |service|
       @volume += service[:weight]
     end
+    return {"asdads" => "asdsad"}.to_json
     if @totalcap < @volume
       return {'error' => true,"message" => "This would overcommit, remove some resources or add nodes"}.to_json
     else
