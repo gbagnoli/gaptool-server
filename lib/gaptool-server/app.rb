@@ -65,6 +65,47 @@ class GaptoolServer < Sinatra::Base
     "You must be lost. Read the instructions."
   end
 
+  post '/servicebalance/:role/:environment' do
+    @runnable = Array.new
+    @available = Array.new
+    @totalcap = 0
+    @volume = 0
+    @redis.keys("host:#{params[:role]}:#{params[:environment]}:*") do |host|
+      @available += {
+        :hostname => host.hget('hostname'),
+        :capacity => host.hget('capacity').to_i,
+      }
+      @totalcap += host.hget('capacity')
+    end
+    @redis.keys("service:#{params[:role]}:#{params[:environment]}:*").each do |service|
+      if @redis.hget(service, run) == 1
+        @runnable += {
+          :name => @redis.hget(service, name),
+          :keys => eval(@redis.hget(service, keys)),
+          :weight => @redis.hget(service, weight).to_i
+        }
+      end
+    end
+    @runnable.each do |service|
+      @volume += service[:weight]
+    end
+    if @totcap < @volume
+      return {'error' => true,"message" => "This would overcommit, remove some resources or add nodes"}
+    else
+      @runnable.sort! { |x, y| x[:weight] <=> y[:weight] }
+      @available.sort! { |x, y| x[:capacity] <=> y[:capacity] }
+      while @runnable != []
+        @available.each do |host|
+          if host[:capacity] >= @runnable.last[:weight]
+            @available[host][:capacity] = @available[host][:capacity] - @runnable.last[:weight]
+            @runlist += { :host => host, :service => @runnable.pop }
+          end
+        end
+      end
+      return @runlist.to_json
+    end
+  end
+
   post '/regenhosts' do
     data = JSON.parse request.body.read
     AWS.config(:access_key_id => @redis.hget('config', 'aws_id'), :secret_access_key => @redis.hget('config', 'aws_secret'), :ec2_endpoint => "ec2.#{data['zone']}.amazonaws.com")
