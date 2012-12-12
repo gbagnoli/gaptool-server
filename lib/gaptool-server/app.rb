@@ -90,7 +90,7 @@ class GaptoolServer < Sinatra::Base
     @runnable.each do |service|
       @volume += service[:weight]
     end
-    if @totcap < @volume
+    if @totalcap < @volume
       return {'error' => true,"message" => "This would overcommit, remove some resources or add nodes"}
     else
       @runnable.sort! { |x, y| x[:weight] <=> y[:weight] }
