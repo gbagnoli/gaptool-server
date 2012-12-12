@@ -61,23 +61,19 @@ class GaptoolServer < Sinatra::Base
     return sg.id
   end
 
-  get '/' do
-    "You must be lost. Read the instructions."
-  end
-
-  post '/servicebalance/:role/:environment' do
+  def balanceservices(role, environment)
     @runnable = Array.new
     @available = Array.new
     @totalcap = 0
     @volume = 0
-    @redis.keys("host:#{params[:role]}:#{params[:environment]}:*") do |host|
+    @redis.keys("host:#{role}:#{environment}:*") do |host|
       @available += {
         :hostname => host.hget('hostname'),
         :capacity => host.hget('capacity').to_i,
       }
       @totalcap += host.hget('capacity')
     end
-    @redis.keys("service:#{params[:role]}:#{params[:environment]}:*").each do |service|
+    @redis.keys("service:#{role}:#{environment}:*").each do |service|
       if @redis.hget(service, run) == 1
         @runnable += {
           :name => @redis.hget(service, name),
@@ -91,9 +87,8 @@ class GaptoolServer < Sinatra::Base
       @volume += service[:weight]
     end
     if @totalcap < @volume
-      return {'error' => true,"message" => "This would overcommit, remove some resources or add nodes"}
+      return {'error' => true,"message" => "This would overcommit, remove some resources or add nodes"}.to_json
     else
-      "{FICL}"
       @runnable.sort! { |x, y| x[:weight] <=> y[:weight] }
       @available.sort! { |x, y| x[:capacity] <=> y[:capacity] }
       while @runnable != []
@@ -106,6 +101,14 @@ class GaptoolServer < Sinatra::Base
       end
       return @runlist.to_json
     end
+  end
+
+  get '/' do
+    "You must be lost. Read the instructions."
+  end
+
+  post '/servicebalance/:role/:environment' do
+    balanceservices(params[:role], params[:environment])
   end
 
   post '/regenhosts' do
