@@ -89,9 +89,9 @@ class GaptoolServer < Sinatra::Base
     if @totalcap < @volume
       return {'error' => true,"message" => "This would overcommit, remove some resources or add nodes"}.to_json
     else
-      return {"asdads" => "asda"}.to_json
       @runnable.sort! { |x, y| x[:weight] <=> y[:weight] }
       @available.sort! { |x, y| x[:capacity] <=> y[:capacity] }
+      @runlist = Array.new
       while @runnable != []
         @available.each do |host|
           if host[:capacity] >= @runnable.last[:weight]
