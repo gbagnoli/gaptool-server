@@ -92,6 +92,7 @@ class GaptoolServer < Sinatra::Base
       @runnable.sort! { |x, y| x[:weight] <=> y[:weight] }
       @available.sort! { |x, y| x[:capacity] <=> y[:capacity] }
       @runlist = Array.new
+      return @runnable.to_json
       while @runnable != []
         @available.each do |host|
           if host[:capacity] >= @runnable.last[:weight]
