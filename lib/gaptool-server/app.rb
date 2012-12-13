@@ -71,7 +71,7 @@ class GaptoolServer < Sinatra::Base
         :hostname => @redis.hget(host, 'hostname'),
         :capacity => @redis.hget(host, 'capacity').to_i,
       }
-      @totalcap += @redis.hget(host, 'capacity')
+      @totalcap += @redis.hget(host, 'capacity').to_i
     end
     @redis.keys("service:#{role}:#{environment}:*").each do |service|
       if @redis.hget(service, 'run').to_i == 1
