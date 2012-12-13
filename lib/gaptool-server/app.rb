@@ -62,9 +62,10 @@ class GaptoolServer < Sinatra::Base
   end
 
   def runservice(host, service, keys)
+    ENV['SSH_AUTH_SOCK'] = ''
     Net::SSH.start(host, 'admin', :key_data => [@redis.hget('config', 'gaptoolkey')], :config => false, :keys_only => true, :paranoid => false) do |ssh|
       ssh.exec! "echo '#{keys.to_yaml}' > /tmp/apikeys-#{service}.yml"
-      ssh.exec! "sudo restart #{service} || sudo start #{service}"
+      ssh.exec! "sudo restart #{service} || sudo start #{service} || exit 0"
     end
   end
 
@@ -123,6 +124,7 @@ class GaptoolServer < Sinatra::Base
     runlist.each do |event|
       runservice(event[:host][:hostname], event[:service][:name], event[:service][:keys])
     end
+    runlist.to_json
   end
 
   put '/service/:role/:environment' do
