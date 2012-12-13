@@ -156,7 +156,7 @@ class GaptoolServer < Sinatra::Base
     }.to_json
   end
 
-  get '/services' do
+  def getservices()
     services = Hash.new
     @redis.keys('service:*').each do |service|
       unless service =~ /:count/
@@ -164,7 +164,11 @@ class GaptoolServer < Sinatra::Base
         services[service['name']]['keys'] = eval(services[service['name']]['keys'])
       end
     end
-    services.to_json
+    return sercices
+  end
+
+  get '/services' do
+    getservices().to_json
   end
 
   post '/regenhosts' do
