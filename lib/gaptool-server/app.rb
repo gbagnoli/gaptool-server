@@ -161,7 +161,7 @@ class GaptoolServer < Sinatra::Base
     @redis.keys('service:*').each do |service|
       unless service =~ /:count/
         line = @redis.hgetall(service)
-        line['keys'] = eval(line['keys')
+        line['keys'] = eval(line['keys'])
         services << line
         #services[service['name']]['keys'] = eval(services[service['name']]['keys'])
       end
