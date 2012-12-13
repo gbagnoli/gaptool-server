@@ -63,7 +63,7 @@ class GaptoolServer < Sinatra::Base
 
   def runservice(host, service, keys)
     Net::SSH.start(host, 'admin', :key_data => [@redis.hget('config', 'gaptoolkey')], :config => false, :keys_only => true, :paranoid => false) do |ssh|
-      ssh.exec! "echo '#{keys.to_yaml}' > /tmp/apikeys-#{service}"
+      ssh.exec! "echo '#{keys.to_yaml}' > /tmp/apikeys-#{service}.yml"
       ssh.exec! "sudo restart #{service} || sudo start #{service}"
     end
   end
@@ -159,8 +159,10 @@ class GaptoolServer < Sinatra::Base
   get '/services' do
     services = Hash.new
     @redis.keys('service:*').each do |service|
-      services.merge!({ service['name'] => @redis.hgetall(service) })
-      services[service['name']]['keys'] = eval(services[service['name']]['keys'])
+      unless service ~= /:count/ do
+        services.merge!({ service['name'] => @redis.hgetall(service) })
+        services[service['name']]['keys'] = eval(services[service['name']]['keys'])
+      end
     end
     services.to_json
   end
