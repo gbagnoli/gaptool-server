@@ -28,6 +28,7 @@ GEM
     multi_xml (0.5.1)
     net-ssh (2.6.2)
     nokogiri (1.5.5)
+    peach (0.5.1)
     pry (0.9.10)
       coderay (~> 1.0.5)
       method_source (~> 0.8)
@@ -71,6 +72,7 @@ DEPENDENCIES
   bundler
   jeweler (~> 1.8.4)
   net-ssh
+  peach
   pry
   rdoc
   redis

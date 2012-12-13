@@ -9,6 +9,7 @@ require 'erb'
 require 'aws-sdk'
 require 'openssl'
 require 'net/ssh'
+require 'peach'
 
 ENV['REDIS_HOST'] = 'localhost' unless ENV['REDIS_HOST']
 ENV['REDIS_PORT'] = '6379' unless ENV['REDIS_PORT']
@@ -130,7 +131,7 @@ class GaptoolServer < Sinatra::Base
 
   get '/servicebalance/:role/:environment' do
     runlist = balanceservices(params[:role], params[:environment])
-    runlist.each do |event|
+    runlist.peach do |event|
       runservice(event[:host][:hostname], event[:service][:name], event[:service][:keys])
     end
     runlist.to_json
