@@ -164,7 +164,7 @@ class GaptoolServer < Sinatra::Base
         services[service['name']]['keys'] = eval(services[service['name']]['keys'])
       end
     end
-    return sercices
+    return services
   end
 
   get '/services' do
