@@ -143,7 +143,7 @@ class GaptoolServer < Sinatra::Base
 
   delete '/service/:role/:environment/:service' do
     count = @redis.decr("service:#{params[:role]}:#{params[:environment]}:#{params[:service]}:count")
-    if count = 0
+    if count == 0
       del = 0
     else
       @redis.del("service:#{params[:role]}:#{params[:environment]}:#{params[:service]}:#{count + 1}")
