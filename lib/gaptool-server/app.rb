@@ -160,8 +160,8 @@ class GaptoolServer < Sinatra::Base
     services = Hash.new
     @redis.keys('service:*').each do |service|
       unless service =~ /:count/
-        services.merge!({ service['name'] => @redis.hgetall(service) })
-        services[service['name']]['keys'] = eval(services[service['name']]['keys'])
+        services[service['name']] << [ @redis.hgetall(service) ]
+        #services[service['name']]['keys'] = eval(services[service['name']]['keys'])
       end
     end
     return services
