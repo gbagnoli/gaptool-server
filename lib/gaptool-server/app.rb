@@ -67,15 +67,15 @@ class GaptoolServer < Sinatra::Base
     @totalcap = 0
     @volume = 0
     @redis.keys("host:#{role}:#{environment}:*") do |host|
-      @available += {
-        :hostname => host.hget('hostname'),
-        :capacity => host.hget('capacity').to_i,
+      @available << {
+        :hostname => @redis.hget(host, 'hostname'),
+        :capacity => @redis.hget(host, 'capacity').to_i,
       }
       @totalcap += host.hget('capacity')
     end
     @redis.keys("service:#{role}:#{environment}:*").each do |service|
       if @redis.hget(service, 'run') == 1
-        @runnable += {
+        @runnable << {
           :name => @redis.hget(service, 'name'),
           :keys => eval(@redis.hget(service, 'keys')),
           :weight => @redis.hget(service, 'weight').to_i
@@ -91,13 +91,12 @@ class GaptoolServer < Sinatra::Base
     else
       @runnable.sort! { |x, y| x[:weight] <=> y[:weight] }
       @available.sort! { |x, y| x[:capacity] <=> y[:capacity] }
-      return @runnable.to_json
       @runlist = Array.new
       while @runnable != []
         @available.each do |host|
           if host[:capacity] >= @runnable.last[:weight]
             @available[host][:capacity] = @available[host][:capacity] - @runnable.last[:weight]
-            @runlist += { :host => host, :service => @runnable.pop }
+            @runlist << { :host => host, :service => @runnable.pop }
           end
         end
       end
