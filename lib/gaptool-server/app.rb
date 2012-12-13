@@ -247,6 +247,7 @@ class GaptoolServer < Sinatra::Base
         @apps << app.gsub('app:', '')
       end
     end
+    data.merge!("capacity" => @redis.hget('capacity', data['itype']))
     data.merge!("hostname" => hostname)
     data.merge!("apps" => @apps.to_json)
     data.merge!("instance" => @instance.id)
