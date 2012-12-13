@@ -123,6 +123,43 @@ class GaptoolServer < Sinatra::Base
     end
   end
 
+  put '/service/:role/:environment' do
+    data = JSON.parse request.body.read
+    count = @redis.incr("service:#{params[:role]}:#{params[:environment]}:#{data['name']}:count")
+    key = "service:#{params[:role]}:#{params[:environment]}:#{data['name']}:#{count}"
+    @redis.hset(key, 'name', data['name'])
+    @redis.hset(key, 'keys', data['keys'])
+    @redis.hset(key, 'weight', data['weight'])
+    @redis.hset(key, 'role', params[:role])
+    @redis.hset(key, 'environment', params[:environment])
+    @redis.hset(key, 'run', data['enabled'])
+    {
+      :role => params[:role],
+      :environment => params[:environment],
+      :service => data['name'],
+      :count => count,
+    }.to_json
+  end
+
+  delete '/service/:role/:environment/:service' do
+    count = @redis.decr("service:#{params[:role]}:#{params[:environment]}:#{params[:service]}:count")
+    del = @redis.del("service:#{params[:role]}:#{params[:environment]}:#{params[:service]}:#{count + 1}")
+    {
+      :role => params[:role],
+      :environment => params[:environment],
+      :service => params[:service],
+      :count => count,
+    }.to_json
+  end
+
+  get '/services' do
+    services = Hash.new
+    @redis.keys('service:*').each do |service|
+      services.merge!({ service['name'] => { @redis.hgetall(service) }})
+    end
+    services.to_json
+  end
+
   post '/regenhosts' do
     data = JSON.parse request.body.read
     AWS.config(:access_key_id => @redis.hget('config', 'aws_id'), :secret_access_key => @redis.hget('config', 'aws_secret'), :ec2_endpoint => "ec2.#{data['zone']}.amazonaws.com")
