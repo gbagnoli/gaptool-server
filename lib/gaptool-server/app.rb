@@ -103,9 +103,11 @@ class GaptoolServer < Sinatra::Base
       @available.sort! { |x, y| x[:capacity] <=> y[:capacity] }
       @runlist = Array.new
       @hosttab = Hash.new
+      @available.each do |host|
+        @hosttab[host[:hostname]] = Array.new
+      end
       while @runnable != []
         @available.each do |host|
-          @hosttab[host[:hostname]] = Array.new unless @hosttab[host[:hostname]]
           break if @runnable.last.nil?
           puts @hosttab
           break if @hosttab[host[:hostname]].grep(@runnable.last[:name])
