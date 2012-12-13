@@ -61,6 +61,13 @@ class GaptoolServer < Sinatra::Base
     return sg.id
   end
 
+  def runservice(host, service, keys)
+    Net::SSH.start(host, 'admin', :key_data => [@redis.hget('config', 'gaptoolkey')], :config => false, :keys_only => true, :paranoid => false) do |ssh|
+      ssh.exec! "echo '#{keys.to_yaml}' > /tmp/apikeys-#{service}"
+      ssh.exec! "sudo restart #{service} || sudo start #{service}"
+    end
+  end
+
   def balanceservices(role, environment)
     @runnable = Array.new
     @available = Array.new
@@ -101,7 +108,7 @@ class GaptoolServer < Sinatra::Base
           end
         end
       end
-      return @runlist.to_json
+      return @runlist
     end
   end
 
@@ -110,7 +117,10 @@ class GaptoolServer < Sinatra::Base
   end
 
   get '/servicebalance/:role/:environment' do
-    balanceservices(params[:role], params[:environment])
+    runlist = balanceservices(params[:role], params[:environment])
+    runlist.each do |event|
+      runservice(event[:host][:hostname], event[:service][:name], event[:service][:keys])
+    end
   end
 
   post '/regenhosts' do
