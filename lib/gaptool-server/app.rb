@@ -157,10 +157,12 @@ class GaptoolServer < Sinatra::Base
   end
 
   def getservices()
-    services = Hash.new
+    services = Array.new
     @redis.keys('service:*').each do |service|
       unless service =~ /:count/
-        services[service['name']] << [ @redis.hgetall(service) ]
+        line = @redis.hgetall(service)
+        line['keys'] = eval(line['keys')
+        services << line
         #services[service['name']]['keys'] = eval(services[service['name']]['keys'])
       end
     end
