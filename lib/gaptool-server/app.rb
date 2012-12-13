@@ -155,7 +155,7 @@ class GaptoolServer < Sinatra::Base
   get '/services' do
     services = Hash.new
     @redis.keys('service:*').each do |service|
-      services.merge!({ service['name'] => { @redis.hgetall(service) }})
+      services.merge!({ service['name'] => @redis.hgetall(service) })
     end
     services.to_json
   end
