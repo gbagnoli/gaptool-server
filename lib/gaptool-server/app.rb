@@ -81,12 +81,14 @@ class GaptoolServer < Sinatra::Base
       @totalcap = @totalcap + @redis.hget(host, 'capacity').to_i
     end
     @redis.keys("service:#{role}:#{environment}:*").each do |service|
-      if @redis.hget(service, 'run').to_i == 1
-        @runnable << {
-          :name => @redis.hget(service, 'name'),
-          :keys => eval(@redis.hget(service, 'keys')),
-          :weight => @redis.hget(service, 'weight').to_i
-        }
+      unless service =~ /:count/
+        if @redis.hget(service, 'run').to_i == 1
+          @runnable << {
+            :name => @redis.hget(service, 'name'),
+            :keys => eval(@redis.hget(service, 'keys')),
+            :weight => @redis.hget(service, 'weight').to_i
+          }
+        end
       end
     end
     @volume = 0
@@ -163,7 +165,6 @@ class GaptoolServer < Sinatra::Base
         line = @redis.hgetall(service)
         line['keys'] = eval(line['keys'])
         services << line
-        #services[service['name']]['keys'] = eval(services[service['name']]['keys'])
       end
     end
     return services
