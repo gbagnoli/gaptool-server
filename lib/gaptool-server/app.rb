@@ -96,7 +96,7 @@ class GaptoolServer < Sinatra::Base
         @available.each do |host|
 #          return @runnable.last[:weight].to_json
           if host[:capacity] >= @runnable.last[:weight].to_i
-            @available[host][:capacity] = @available[host][:capacity] - @runnable.last[:weight]
+            @available[host][:capacity] = @available[host][:capacity].to_i - @runnable.last[:weight].to_i
             @runlist << { :host => host, :service => @runnable.pop }
           end
         end
