@@ -70,7 +70,7 @@ class GaptoolServer < Sinatra::Base
   end
 
   def balanceservices(role, environment)
-    @runnable = Array.new
+    @runable = Array.new
     @available = Array.new
     @totalcap = 0
     @volume = 0
@@ -84,7 +84,7 @@ class GaptoolServer < Sinatra::Base
     @redis.keys("service:#{role}:#{environment}:*").each do |service|
       unless service =~ /:count/
         if @redis.hget(service, 'run').to_i == 1
-          @runnable << {
+          @runable << {
             :name => @redis.hget(service, 'name'),
             :keys => eval(@redis.hget(service, 'keys')),
             :weight => @redis.hget(service, 'weight').to_i
@@ -93,28 +93,28 @@ class GaptoolServer < Sinatra::Base
       end
     end
     @volume = 0
-    @runnable.each do |service|
+    @runable.each do |service|
       @volume += service[:weight]
     end
     if @totalcap < @volume
       return {'error' => true,"message" => "This would overcommit, remove some resources or add nodes","totalcap" => @totalcap, "volume" => @volume}.to_json
     else
-      @runnable.sort! { |x, y| x[:weight] <=> y[:weight] }
+      @runable.sort! { |x, y| x[:weight] <=> y[:weight] }
       @available.sort! { |x, y| x[:capacity] <=> y[:capacity] }
       @runlist = Array.new
       @hosttab = Hash.new
       @available.each do |host|
         @hosttab[host[:hostname]] = Array.new
       end
-      while @runnable != []
+      while @runable != []
         @available.each do |host|
-          break if @runnable.last.nil?
+          break if @runable.last.nil?
           puts @hosttab
-          break if @hosttab[host[:hostname]].grep(@runnable.last[:name])
-          if host[:capacity] >= @runnable.last[:weight]
-            host[:capacity] = host[:capacity] - @runnable.last[:weight]
-            @hosttab[host[:hostname]] << @runnable.last[:name]
-            @runlist << { :host => host, :service => @runnable.pop }
+          break if @hosttab[host[:hostname]].grep(@runable.last[:name])
+          if host[:capacity] >= @runable.last[:weight]
+            host[:capacity] = host[:capacity] - @runable.last[:weight]
+            @hosttab[host[:hostname]] << @runable.last[:name]
+            @runlist << { :host => host, :service => @runable.pop }
           end
         end
       end
