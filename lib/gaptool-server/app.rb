@@ -78,6 +78,7 @@ class GaptoolServer < Sinatra::Base
     @redis.keys("host:#{role}:#{environment}:*").each do |host|
       @available << {
         :hostname => @redis.hget(host, 'hostname'),
+        :instance => @redis.hget(host, 'instance'),
         :capacity => @redis.hget(host, 'capacity').to_i,
       }
       @totalcap = @totalcap + @redis.hget(host, 'capacity').to_i
