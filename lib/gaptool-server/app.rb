@@ -191,7 +191,7 @@ class GaptoolServer < Sinatra::Base
     data = JSON.parse request.body.read
     AWS.config(:access_key_id => @redis.hget('config', 'aws_id'), :secret_access_key => @redis.hget('config', 'aws_secret'), :ec2_endpoint => "ec2.#{data['zone']}.amazonaws.com")
     @ec2 = AWS::EC2.new
-    hosts = String.new
+    hosts = Hash.new
     @redis.keys("host:*").each do |host|
       out = @redis.hset(host, 'hostname', @ec2.instances[@redis.hget(host, 'instance')].dns_name)
       hosts.merge!(host.gsub(/host:/, '').gsub(/:/,'-') => Resolv.getaddress(@redis.hget(host, 'hostname')))
