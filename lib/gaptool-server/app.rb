@@ -99,7 +99,12 @@ class GaptoolServer < Sinatra::Base
       @volume += service[:weight]
     end
     if @totalcap < @volume
-      return {'error' => true,"message" => "This would overcommit, remove some resources or add nodes","totalcap" => @totalcap, "volume" => @volume}.to_json
+      return {
+        :error => true,
+        :message => "This would overcommit, remove some resources or add nodes",
+        :totalcap => @totalcap,
+        :volume => @volume
+      }
     else
       @runable.sort! { |x, y| x[:weight] <=> y[:weight] }
       @available.sort! { |x, y| x[:capacity] <=> y[:capacity] }
@@ -157,9 +162,11 @@ class GaptoolServer < Sinatra::Base
 
   get '/servicebalance/:role/:environment' do
     runlist = balanceservices(params[:role], params[:environment])
-#    runlist.peach do |event|
-#      runservice(event[:host][:hostname], event[:service][:name], event[:service][:keys])
-#    end
+    if runlist[:error] != true
+      runlist.peach do |event|
+        runservice(event[:host][:hostname], event[:service][:name], event[:service][:keys])
+      end
+    end
     runlist.to_json
   end
 
