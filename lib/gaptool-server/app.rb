@@ -205,6 +205,8 @@ class GaptoolServer < Sinatra::Base
       count = 0
     else
       count = @redis.decr("service:#{params[:role]}:#{params[:environment]}:#{params[:service]}:count")
+      service = eval(@redis.range("running", 0, -1).grep(/scoring/).last)
+      runservice(service[:hostname], params[:role], params[:environment], params[:service], 'stop')
       @redis.del("service:#{params[:role]}:#{params[:environment]}:#{params[:service]}:#{count + 1}")
     end
     {
