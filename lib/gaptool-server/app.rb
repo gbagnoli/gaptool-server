@@ -62,11 +62,18 @@ class GaptoolServer < Sinatra::Base
     return sg.id
   end
 
-  def runservice(host, service, keys)
+  def runservice(host, service, keys, state)
     ENV['SSH_AUTH_SOCK'] = ''
     Net::SSH.start(host, 'admin', :key_data => [@redis.hget('config', 'gaptoolkey')], :config => false, :keys_only => true, :paranoid => false) do |ssh|
-      ssh.exec! "echo '#{keys.to_yaml}' > /tmp/apikeys-#{service}.yml"
-      ssh.exec! "sudo restart #{service} || sudo start #{service} || exit 0"
+      if state == 'start'
+        ssh.exec! "echo '#{keys.to_yaml}' > /tmp/apikeys-#{service}.yml"
+        ssh.exec! "sudo restart #{service} || sudo start #{service} || exit 0"
+        @redis.push("running", "{:hostname => '#{host}', :service => '#{service}'}")
+      elsif state == 'stop'
+        ssh.exec! "rm /tmp/apikeys-#{service}.yml"
+        ssh.exec! "sudo stop #{service} || exit 0"
+        @redis.lrem("running", -1, "{:hostname => '#{host}', :service => '#{service}'}")
+      end
     end
   end
 
@@ -131,6 +138,16 @@ class GaptoolServer < Sinatra::Base
     end
   end
 
+# incomplete
+#  def servicestopall()
+#    @redis.lrange('running', 0, -1).peach do |service|
+#      svc = eval(service)
+#        instance = @redis.keys("host:*:#{instance}").first
+#        hostname = @redis.hget(instance, 'hostname')
+#        
+#        runservice(hostname, 
+
+
   def hostsgen(zone)
     AWS.config(:access_key_id => @redis.hget('config', 'aws_id'), :secret_access_key => @redis.hget('config', 'aws_secret'), :ec2_endpoint => "ec2.#{zone}.amazonaws.com")
     @ec2 = AWS::EC2.new
@@ -164,7 +181,7 @@ class GaptoolServer < Sinatra::Base
     runlist = balanceservices(params[:role], params[:environment])
     if runlist[:error] != true
       runlist.peach do |event|
-        runservice(event[:host][:hostname], event[:service][:name], event[:service][:keys])
+        runservice(event[:host][:hostname], event[:host][:instance], params[:role], params[:environment], event[:service][:name], event[:service][:keys], 'start')
       end
     end
     runlist.to_json
