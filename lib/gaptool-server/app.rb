@@ -62,17 +62,17 @@ class GaptoolServer < Sinatra::Base
     return sg.id
   end
 
-  def runservice(host, service, keys, state)
+  def runservice(host, role, environment, service, keys, state)
     ENV['SSH_AUTH_SOCK'] = ''
     Net::SSH.start(host, 'admin', :key_data => [@redis.hget('config', 'gaptoolkey')], :config => false, :keys_only => true, :paranoid => false) do |ssh|
       if state == 'start'
         ssh.exec! "echo '#{keys.to_yaml}' > /tmp/apikeys-#{service}.yml"
         ssh.exec! "sudo restart #{service} || sudo start #{service} || exit 0"
-        @redis.lpush("running", "{:hostname => '#{host}', :service => '#{service}'}")
+        @redis.lpush("running", "{:hostname => '#{host}', :role => '#{role}', :environment => '#{environment}', :service => '#{service}'}")
       elsif state == 'stop'
         ssh.exec! "rm /tmp/apikeys-#{service}.yml"
         ssh.exec! "sudo stop #{service} || exit 0"
-        @redis.lrem("running", -1, "{:hostname => '#{host}', :service => '#{service}'}")
+        @redis.lrem("running", -1, "{:hostname => '#{host}', :role => '#{role}', :environment => '#{environment}', service => '#{service}'}")
       end
     end
   end
@@ -133,15 +133,14 @@ class GaptoolServer < Sinatra::Base
     end
   end
 
-# incomplete
-#  def servicestopall()
-#    @redis.lrange('running', 0, -1).peach do |service|
-#      svc = eval(service)
-#        instance = @redis.keys("host:*:#{instance}").first
-#        hostname = @redis.hget(instance, 'hostname')
-#        
-#        runservice(hostname, 
-
+  def servicestopall(role, environment)
+    @redis.lrange('running', 0, -1).peach do |service|
+      line = eval(service)
+      if line[:role] == role && line[:environment] == environment
+        runservice(line[:hostname], role, environment, line[:service], nil, 'stop')
+      end
+    end
+  end
 
   def hostsgen(zone)
     AWS.config(:access_key_id => @redis.hget('config', 'aws_id'), :secret_access_key => @redis.hget('config', 'aws_secret'), :ec2_endpoint => "ec2.#{zone}.amazonaws.com")
@@ -175,8 +174,9 @@ class GaptoolServer < Sinatra::Base
   get '/servicebalance/:role/:environment' do
     runlist = balanceservices(params[:role], params[:environment])
     unless runlist.kind_of? Hash
+      servicestopall(params[:role], params[:environment])
       runlist.peach do |event|
-        runservice(event[:host][:hostname], event[:service][:name], event[:service][:keys], 'start')
+        runservice(event[:host][:hostname], params[:role], params[:environment], event[:service][:name], event[:service][:keys], 'start')
       end
     end
     runlist.to_json
