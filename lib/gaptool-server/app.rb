@@ -106,12 +106,7 @@ class GaptoolServer < Sinatra::Base
       @volume += service[:weight]
     end
     if @totalcap < @volume
-      return {
-        :error => true,
-        :message => "This would overcommit, remove some resources or add nodes",
-        :totalcap => @totalcap,
-        :volume => @volume
-      }
+      return { :error => true, :message => "This would overcommit, remove some resources or add nodes", :totalcap => @totalcap, :volume => @volume }
     else
       @runable.sort! { |x, y| x[:weight] <=> y[:weight] }
       @available.sort! { |x, y| x[:capacity] <=> y[:capacity] }
