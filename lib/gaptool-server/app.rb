@@ -68,7 +68,7 @@ class GaptoolServer < Sinatra::Base
       if state == 'start'
         ssh.exec! "echo '#{keys.to_yaml}' > /tmp/apikeys-#{service}.yml"
         ssh.exec! "sudo restart #{service} || sudo start #{service} || exit 0"
-        @redis.push("running", "{:hostname => '#{host}', :service => '#{service}'}")
+        @redis.lpush("running", "{:hostname => '#{host}', :service => '#{service}'}")
       elsif state == 'stop'
         ssh.exec! "rm /tmp/apikeys-#{service}.yml"
         ssh.exec! "sudo stop #{service} || exit 0"
