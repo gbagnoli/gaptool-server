@@ -176,7 +176,7 @@ class GaptoolServer < Sinatra::Base
     runlist = balanceservices(params[:role], params[:environment])
     unless runlist.kind_of? Hash
       runlist.peach do |event|
-        runservice(event[:host][:hostname], event[:host][:instance], params[:role], params[:environment], event[:service][:name], event[:service][:keys], 'start')
+        runservice(event[:host][:hostname], event[:service][:name], event[:service][:keys], 'start')
       end
     end
     runlist.to_json
