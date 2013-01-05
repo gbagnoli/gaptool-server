@@ -14,6 +14,7 @@ require 'peach'
 ENV['REDIS_HOST'] = 'localhost' unless ENV['REDIS_HOST']
 ENV['REDIS_PORT'] = '6379' unless ENV['REDIS_PORT']
 ENV['REDIS_PASS'] = nil unless ENV['REDIS_PASS']
+$redis = Redis.new(:host => ENV['REDIS_HOST'], :port => ENV['REDIS_PORT'], :password => ENV['REDIS_PASS'])
 
 class GaptoolServer < Sinatra::Base
   # Don't generate fancy HTML for stack traces.
@@ -23,13 +24,12 @@ class GaptoolServer < Sinatra::Base
 
   def hash2redis( key, hash )
     hash.keys.each do |hkey|
-      @redis.hset key, hkey, hash[hkey]
+      $redis.hset key, hkey, hash[hkey]
     end
   end
 
   before do
-    @redis = Redis.new(:host => ENV['REDIS_HOST'], :port => ENV['REDIS_PORT'], :password => ENV['REDIS_PASS'])
-    error 401 unless @redis.hget('users', env['HTTP_X_GAPTOOL_USER']) == env['HTTP_X_GAPTOOL_KEY']
+    error 401 unless $redis.hget('users', env['HTTP_X_GAPTOOL_USER']) == env['HTTP_X_GAPTOOL_KEY']
     error 401 unless env['HTTP_X_GAPTOOL_USER'] && env['HTTP_X_GAPTOOL_KEY']
   end
 
@@ -37,7 +37,7 @@ class GaptoolServer < Sinatra::Base
     @key = OpenSSL::PKey::RSA.new 2048
     @pubkey = "#{@key.ssh_type} #{[@key.to_blob].pack('m0')} GAPTOOL_GENERATED_KEY"
     ENV['SSH_AUTH_SOCK'] = ''
-    Net::SSH.start(host, 'admin', :key_data => [@redis.hget('config', 'gaptoolkey')], :config => false, :keys_only => true, :paranoid => false) do |ssh|
+    Net::SSH.start(host, 'admin', :key_data => [$redis.hget('config', 'gaptoolkey')], :config => false, :keys_only => true, :paranoid => false) do |ssh|
       ssh.exec! "grep -v GAPTOOL_GENERATED_KEY ~/.ssh/authorized_keys > /tmp/pubkeys"
       ssh.exec! "cat /tmp/pubkeys > ~/.ssh/authorized_keys"
       ssh.exec! "rm /tmp/pubkeys"
@@ -47,7 +47,7 @@ class GaptoolServer < Sinatra::Base
   end
 
   def gt_securitygroup(role, environment, zone)
-    AWS.config(:access_key_id => @redis.hget('config', 'aws_id'), :secret_access_key => @redis.hget('config', 'aws_secret'), :ec2_endpoint => "ec2.#{zone.chop}.amazonaws.com")
+    AWS.config(:access_key_id => $redis.hget('config', 'aws_id'), :secret_access_key => $redis.hget('config', 'aws_secret'), :ec2_endpoint => "ec2.#{zone.chop}.amazonaws.com")
     @ec2 = AWS::EC2.new
     groupname = "#{role}-#{environment}"
     default_list = [ 22 ]
@@ -64,15 +64,15 @@ class GaptoolServer < Sinatra::Base
 
   def runservice(host, role, environment, service, keys, state)
     ENV['SSH_AUTH_SOCK'] = ''
-    Net::SSH.start(host, 'admin', :key_data => [@redis.hget('config', 'gaptoolkey')], :config => false, :keys_only => true, :paranoid => false) do |ssh|
+    Net::SSH.start(host, 'admin', :key_data => [$redis.hget('config', 'gaptoolkey')], :config => false, :keys_only => true, :paranoid => false) do |ssh|
       if state == 'start'
         ssh.exec! "echo '#{keys.to_yaml}' > /tmp/apikeys-#{service}.yml"
         ssh.exec! "sudo restart #{service} || sudo start #{service} || exit 0"
-        @redis.lpush("running", "{:hostname => '#{host}', :role => '#{role}', :environment => '#{environment}', :service => '#{service}'}")
+        $redis.lpush("running", "{:hostname => '#{host}', :role => '#{role}', :environment => '#{environment}', :service => '#{service}'}")
       elsif state == 'stop'
         ssh.exec! "rm /tmp/apikeys-#{service}.yml"
         ssh.exec! "sudo stop #{service} || exit 0"
-        @redis.lrem("running", -1, "{:hostname => '#{host}', :role => '#{role}', :environment => '#{environment}', service => '#{service}'}")
+        $redis.lrem("running", -1, "{:hostname => '#{host}', :role => '#{role}', :environment => '#{environment}', service => '#{service}'}")
       end
     end
   end
@@ -82,21 +82,21 @@ class GaptoolServer < Sinatra::Base
     @available = Array.new
     @totalcap = 0
     @volume = 0
-    @redis.keys("host:#{role}:#{environment}:*").each do |host|
+    $redis.keys("host:#{role}:#{environment}:*").each do |host|
       @available << {
-        :hostname => @redis.hget(host, 'hostname'),
-        :instance => @redis.hget(host, 'instance'),
-        :capacity => @redis.hget(host, 'capacity').to_i,
+        :hostname => $redis.hget(host, 'hostname'),
+        :instance => $redis.hget(host, 'instance'),
+        :capacity => $redis.hget(host, 'capacity').to_i,
       }
-      @totalcap = @totalcap + @redis.hget(host, 'capacity').to_i
+      @totalcap = @totalcap + $redis.hget(host, 'capacity').to_i
     end
-    @redis.keys("service:#{role}:#{environment}:*").each do |service|
+    $redis.keys("service:#{role}:#{environment}:*").each do |service|
       unless service =~ /:count/
-        if @redis.hget(service, 'run').to_i == 1
+        if $redis.hget(service, 'run').to_i == 1
           @runable << {
-            :name => @redis.hget(service, 'name'),
-            :keys => eval(@redis.hget(service, 'keys')),
-            :weight => @redis.hget(service, 'weight').to_i
+            :name => $redis.hget(service, 'name'),
+            :keys => eval($redis.hget(service, 'keys')),
+            :weight => $redis.hget(service, 'weight').to_i
           }
         end
       end
@@ -134,7 +134,7 @@ class GaptoolServer < Sinatra::Base
   end
 
   def servicestopall(role, environment)
-    @redis.lrange('running', 0, -1).peach do |service|
+    $redis.lrange('running', 0, -1).peach do |service|
       line = eval(service)
       if line[:role] == role && line[:environment] == environment
         runservice(line[:hostname], role, environment, line[:service], nil, 'stop')
@@ -143,14 +143,14 @@ class GaptoolServer < Sinatra::Base
   end
 
   def hostsgen(zone)
-    AWS.config(:access_key_id => @redis.hget('config', 'aws_id'), :secret_access_key => @redis.hget('config', 'aws_secret'), :ec2_endpoint => "ec2.#{zone}.amazonaws.com")
+    AWS.config(:access_key_id => $redis.hget('config', 'aws_id'), :secret_access_key => $redis.hget('config', 'aws_secret'), :ec2_endpoint => "ec2.#{zone}.amazonaws.com")
     @ec2 = AWS::EC2.new
     hosts = Hash.new
-    @redis.keys("host:*").each do |host|
-      @redis.hset(host, 'hostname', @ec2.instances[@redis.hget(host, 'instance')].dns_name)
-      hosts.merge!(host.gsub(/host:/, '').gsub(/:/,'-') => Resolv.getaddress(@redis.hget(host, 'hostname')))
-      if @redis.hget(host, 'alias')
-        hosts.merge!(@redis.hget(host, 'alias') => Resolv.getaddress(@redis.hget(host, 'hostname')))
+    $redis.keys("host:*").each do |host|
+      $redis.hset(host, 'hostname', @ec2.instances[$redis.hget(host, 'instance')].dns_name)
+      hosts.merge!(host.gsub(/host:/, '').gsub(/:/,'-') => Resolv.getaddress($redis.hget(host, 'hostname')))
+      if $redis.hget(host, 'alias')
+        hosts.merge!($redis.hget(host, 'alias') => Resolv.getaddress($redis.hget(host, 'hostname')))
       end
     end
 
@@ -158,9 +158,9 @@ class GaptoolServer < Sinatra::Base
     hosts.keys.each do |key|
       hostsfile += "#{hosts[key]} #{key} # PLACED BY GT\n"
     end
-#    @redis.keys("host:*").peach do |host|
+#    $redis.keys("host:*").peach do |host|
 #      ENV['SSH_AUTH_SOCK'] = ''
-#      Net::SSH.start(@redis.hget(host, 'hostname'), 'admin', :key_data => [@redis.hget('config', 'gaptoolkey')], :config => false, :keys_only => true, :paranoid => false) do |ssh|
+#      Net::SSH.start($redis.hget(host, 'hostname'), 'admin', :key_data => [$redis.hget('config', 'gaptoolkey')], :config => false, :keys_only => true, :paranoid => false) do |ssh|
 #        ssh.exec! "echo \"127.0.0.1 #{currenthost}\n\" \"#{hostsfile}\" > /etc/hosts.generated"
 #      end
 #    end
@@ -184,14 +184,14 @@ class GaptoolServer < Sinatra::Base
 
   put '/service/:role/:environment' do
     data = JSON.parse request.body.read
-    count = @redis.incr("service:#{params[:role]}:#{params[:environment]}:#{data['name']}:count")
+    count = $redis.incr("service:#{params[:role]}:#{params[:environment]}:#{data['name']}:count")
     key = "service:#{params[:role]}:#{params[:environment]}:#{data['name']}:#{count}"
-    @redis.hset(key, 'name', data['name'])
-    @redis.hset(key, 'keys', data['keys'])
-    @redis.hset(key, 'weight', data['weight'])
-    @redis.hset(key, 'role', params[:role])
-    @redis.hset(key, 'environment', params[:environment])
-    @redis.hset(key, 'run', data['enabled'])
+    $redis.hset(key, 'name', data['name'])
+    $redis.hset(key, 'keys', data['keys'])
+    $redis.hset(key, 'weight', data['weight'])
+    $redis.hset(key, 'role', params[:role])
+    $redis.hset(key, 'environment', params[:environment])
+    $redis.hset(key, 'run', data['enabled'])
     {
       :role => params[:role],
       :environment => params[:environment],
@@ -201,13 +201,13 @@ class GaptoolServer < Sinatra::Base
   end
 
   delete '/service/:role/:environment/:service' do
-    if @redis.get("service:#{params[:role]}:#{params[:environment]}:#{params[:service]}:count") == '0'
+    if $redis.get("service:#{params[:role]}:#{params[:environment]}:#{params[:service]}:count") == '0'
       count = 0
     else
-      count = @redis.decr("service:#{params[:role]}:#{params[:environment]}:#{params[:service]}:count")
-      service = eval(@redis.range("running", 0, -1).grep(/scoring/).last)
+      count = $redis.decr("service:#{params[:role]}:#{params[:environment]}:#{params[:service]}:count")
+      service = eval($redis.range("running", 0, -1).grep(/scoring/).last)
       runservice(service[:hostname], params[:role], params[:environment], params[:service], 'stop')
-      @redis.del("service:#{params[:role]}:#{params[:environment]}:#{params[:service]}:#{count + 1}")
+      $redis.del("service:#{params[:role]}:#{params[:environment]}:#{params[:service]}:#{count + 1}")
     end
     {
       :role => params[:role],
@@ -219,9 +219,9 @@ class GaptoolServer < Sinatra::Base
 
   def getservices()
     services = Array.new
-    @redis.keys('service:*').each do |service|
+    $redis.keys('service:*').each do |service|
       unless service =~ /:count/
-        line = @redis.hgetall(service)
+        line = $redis.hgetall(service)
         line['keys'] = eval(line['keys'])
         services << line
       end
@@ -241,7 +241,7 @@ class GaptoolServer < Sinatra::Base
 
   post '/init' do
     data = JSON.parse request.body.read
-    AWS.config(:access_key_id => @redis.hget('config', 'aws_id'), :secret_access_key => @redis.hget('config', 'aws_secret'), :ec2_endpoint => "ec2.#{data['zone'].chop}.amazonaws.com")
+    AWS.config(:access_key_id => $redis.hget('config', 'aws_id'), :secret_access_key => $redis.hget('config', 'aws_secret'), :ec2_endpoint => "ec2.#{data['zone'].chop}.amazonaws.com")
     @ec2 = AWS::EC2.new
     # create shared secret to reference in /register
     @secret = (0...8).map{65.+(rand(26)).chr}.join
@@ -249,12 +249,12 @@ class GaptoolServer < Sinatra::Base
     sgid = gt_securitygroup(data['role'], data['environment'], data['zone'])
     if data['mirror']
       instance = @ec2.instances.create(
-        :image_id => @redis.hget("amis", data['zone'].chop),
+        :image_id => $redis.hget("amis", data['zone'].chop),
         :availability_zone => data['zone'],
         :instance_type => data['itype'],
         :key_name => "gaptool",
         :security_group_ids => sgid,
-        :user_data => "#!/bin/bash\ncurl --silent -H 'X-GAPTOOL-USER: #{env['HTTP_X_GAPTOOL_USER']}' -H 'X-GAPTOOL-KEY: #{env['HTTP_X_GAPTOOL_KEY']}' #{@redis.hget('config', 'url')}/register -X PUT --data '#{data.to_json}' | bash",
+        :user_data => "#!/bin/bash\ncurl --silent -H 'X-GAPTOOL-USER: #{env['HTTP_X_GAPTOOL_USER']}' -H 'X-GAPTOOL-KEY: #{env['HTTP_X_GAPTOOL_KEY']}' #{$redis.hget('config', 'url')}/register -X PUT --data '#{data.to_json}' | bash",
         :block_device_mappings => {
           "/dev/sdf" => {
             :volume_size => data['mirror'].to_i,
@@ -268,29 +268,29 @@ class GaptoolServer < Sinatra::Base
       )
     else
       instance = @ec2.instances.create(
-        :image_id => @redis.hget("amis", data['zone'].chop),
+        :image_id => $redis.hget("amis", data['zone'].chop),
         :availability_zone => data['zone'],
         :instance_type => data['itype'],
         :key_name => "gaptool",
         :security_group_ids => sgid,
-        :user_data => "#!/bin/bash\ncurl --silent -H 'X-GAPTOOL-USER: #{env['HTTP_X_GAPTOOL_USER']}' -H 'X-GAPTOOL-KEY: #{env['HTTP_X_GAPTOOL_KEY']}' #{@redis.hget('config', 'url')}/register -X PUT --data '#{data.to_json}' | bash"
+        :user_data => "#!/bin/bash\ncurl --silent -H 'X-GAPTOOL-USER: #{env['HTTP_X_GAPTOOL_USER']}' -H 'X-GAPTOOL-KEY: #{env['HTTP_X_GAPTOOL_KEY']}' #{$redis.hget('config', 'url')}/register -X PUT --data '#{data.to_json}' | bash"
       )
     end
     # Add host tag
     instance.add_tag('Name', :value => "#{data['role']}-#{data['environment']}-#{instance.id}")
     # Create temporary redis entry for /register to pull the instance id
-    @redis.set("instance:#{data['role']}:#{data['environment']}:#{@secret}", instance.id)
+    $redis.set("instance:#{data['role']}:#{data['environment']}:#{@secret}", instance.id)
     "{\"instance\":\"#{instance.id}\"}"
   end
 
   post '/terminate' do
     data = JSON.parse request.body.read
-    AWS.config(:access_key_id => @redis.hget('config', 'aws_id'), :secret_access_key => @redis.hget('config', 'aws_secret'), :ec2_endpoint => "ec2.#{data['zone']}.amazonaws.com")
+    AWS.config(:access_key_id => $redis.hget('config', 'aws_id'), :secret_access_key => $redis.hget('config', 'aws_secret'), :ec2_endpoint => "ec2.#{data['zone']}.amazonaws.com")
     @ec2 = AWS::EC2.new
     begin
       @instance = @ec2.instances[data['id']]
       res = @instance.terminate
-      res = @redis.del(@redis.keys("*#{data['id']}"))
+      res = $redis.del($redis.keys("*#{data['id']}"))
       out = {data['id'] => {'status'=> 'terminated'}}
     rescue
       error 404
@@ -300,18 +300,18 @@ class GaptoolServer < Sinatra::Base
 
   put '/register' do
     data = JSON.parse request.body.read
-    AWS.config(:access_key_id => @redis.hget('config', 'aws_id'), :secret_access_key => @redis.hget('config', 'aws_secret'), :ec2_endpoint => "ec2.#{data['zone'].chop}.amazonaws.com")
+    AWS.config(:access_key_id => $redis.hget('config', 'aws_id'), :secret_access_key => $redis.hget('config', 'aws_secret'), :ec2_endpoint => "ec2.#{data['zone'].chop}.amazonaws.com")
     @ec2 = AWS::EC2.new
-    @instance = @ec2.instances[@redis.get("instance:#{data['role']}:#{data['environment']}:#{data['secret']}")]
+    @instance = @ec2.instances[$redis.get("instance:#{data['role']}:#{data['environment']}:#{data['secret']}")]
     hostname = @instance.dns_name
-    delete = @redis.del("instance:#{data['role']}:#{data['environment']}:#{data['secret']}")
+    delete = $redis.del("instance:#{data['role']}:#{data['environment']}:#{data['secret']}")
     @apps = Array.new
-    @redis.keys("app:*").each do |app|
-      if @redis.hget(app, 'role') == data['role']
+    $redis.keys("app:*").each do |app|
+      if $redis.hget(app, 'role') == data['role']
         @apps << app.gsub('app:', '')
       end
     end
-    data.merge!("capacity" => @redis.hget('capacity', data['itype']))
+    data.merge!("capacity" => $redis.hget('capacity', data['itype']))
     data.merge!("hostname" => hostname)
     data.merge!("apps" => @apps.to_json)
     data.merge!("instance" => @instance.id)
@@ -323,10 +323,10 @@ class GaptoolServer < Sinatra::Base
       'run_list' => ['recipe[init]'],
       'role' => data['role'],
       'environment' => data['environment'],
-      'chefrepo' => @redis.hget('config', 'chefrepo'),
-      'chefbranch' => @redis.hget('config', 'chefbranch'),
-      'identity' => @redis.hget('config','initkey'),
-      'appuser' => @redis.hget('config','appuser'),
+      'chefrepo' => $redis.hget('config', 'chefrepo'),
+      'chefbranch' => $redis.hget('config', 'chefbranch'),
+      'identity' => $redis.hget('config','initkey'),
+      'appuser' => $redis.hget('config','appuser'),
       'apps' => @apps
     }.to_json
     erb :init
@@ -334,42 +334,42 @@ class GaptoolServer < Sinatra::Base
 
   get '/hosts' do
     out = Array.new
-    @redis.keys("host:*").each do |host|
-      out << @redis.hgetall(host)
+    $redis.keys("host:*").each do |host|
+      out << $redis.hgetall(host)
     end
     out.to_json
   end
 
   get '/apps' do
     out = Hash.new
-    @redis.keys("app:*").each do |app|
-      out.merge!(app => @redis.hgetall(app))
+    $redis.keys("app:*").each do |app|
+      out.merge!(app => $redis.hgetall(app))
     end
     out.to_json
   end
 
   get '/hosts/:role' do
     out = Array.new
-    @redis.keys("host:#{params[:role]}:*").each do |host|
-      out << @redis.hgetall(host)
+    $redis.keys("host:#{params[:role]}:*").each do |host|
+      out << $redis.hgetall(host)
     end
     out.to_json
   end
 
   get '/hosts/:role/:environment' do
     out = Array.new
-    @redis.keys("host:#{params[:role]}:#{params[:environment]}*").each do |host|
-      out << @redis.hgetall(host)
+    $redis.keys("host:#{params[:role]}:#{params[:environment]}*").each do |host|
+      out << $redis.hgetall(host)
     end
     out.to_json
   end
 
   get '/host/:role/:environment/:instance' do
-    @redis.hgetall("host:#{params[:role]}:#{params[:environment]}:#{params[:instance]}").to_json
+    $redis.hgetall("host:#{params[:role]}:#{params[:environment]}:#{params[:instance]}").to_json
   end
 
   get '/ssh/:role/:environment/:instance' do
-    @host = @redis.hget("host:#{params[:role]}:#{params[:environment]}:#{params[:instance]}", 'hostname')
+    @host = $redis.hget("host:#{params[:role]}:#{params[:environment]}:#{params[:instance]}", 'hostname')
     @key = putkey(@host)
     {'hostname' => @host, 'key' => @key, 'pubkey' => @pubkey}.to_json
   end
