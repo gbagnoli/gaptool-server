@@ -1,0 +1,9 @@
+<html>
+  <body>
+    <ul>
+    <% @hosts.each do |host|%>
+      <li><%=host%> <%=$redis.get host%></li>
+    <% end %>
+    </ul>
+  </body>
+</html>

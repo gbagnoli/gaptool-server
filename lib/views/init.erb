@@ -1,0 +1,10 @@
+apt-get install -y zsh git libssl-dev ruby1.9.1-full build-essential
+gem install --bindir /usr/local/bin --no-ri --no-rdoc chef
+cat << 'EOFKEY' > /root/.ssh/id_rsa
+<%=$redis.hget('config', 'initkey')%>
+EOFKEY
+chmod 600 /root/.ssh/id_rsa
+echo 'StrictHostKeyChecking no' > /root/.ssh/config
+git clone -b <%=$redis.hget('config', 'chefbranch')%> <%=$redis.hget('config', 'chefrepo')%> /root/ops
+echo '<%=@json%>' > /root/init.json
+chef-solo -c /root/ops/cookbooks/init.rb -j /root/init.json && (rm /root/.ssh/id_rsa; userdel -r ubuntu; rm -rf /root/.ssh; rm -rf /root/ops; rm -rf /root/init.json)
