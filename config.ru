@@ -1,17 +1,24 @@
 #!/usr/bin/env ruby
 
-require 'sinatra/base'
-require 'sinatra'
-require 'json'
 require 'redis'
-require 'yaml'
-require 'erb'
-require 'aws-sdk'
-require 'openssl'
-require 'net/ssh'
 
-$:.unshift(File.expand_path(File.join(File.dirname(__FILE__), "lib")))
+ENV['REDIS_HOST'] = 'localhost' unless ENV['REDIS_HOST']
+ENV['REDIS_PORT'] = '6379' unless ENV['REDIS_PORT']
+ENV['REDIS_PASS'] = nil unless ENV['REDIS_PASS']
+$redis = Redis.new(:host => ENV['REDIS_HOST'], :port => ENV['REDIS_PORT'], :password => ENV['REDIS_PASS'])
 
-require 'gaptool-server/app.rb'
+libpath = File.expand_path(File.join(File.dirname(__FILE__), "lib"))
 
-run GaptoolServer
+$:.unshift(libpath)
+
+require "#{libpath}/app.rb"
+#Dir["#{ENV['HOME']}/.gaptool-server-plugins/*.rb"].each {|file| require file }
+#Dir["#{libpath}/plugins/*.rb"].each {|file| require file }
+
+instance = GaptoolServer.new
+#$redis.smembers("plugins").each do |plugin|
+##  puts "Loading Plugin #{plugin}"
+#  instance.extend(Object.instance_eval{remove_const(plugin)})
+#end
+
+run instance
