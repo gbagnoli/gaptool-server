@@ -6,6 +6,18 @@ module GaptoolBaseHelpers
     end
   end
 
+  def redishash(query)
+    result = Hash.new
+    query.keys.each do |key|
+      entry = Array.new
+      query[key].each do |hkey|
+        entry << { hkey => $redit.hget(key, hkey) }
+      end
+      result.merge! { key => entry }
+    end
+    return result
+  end
+
   def putkey( host )
     @key = OpenSSL::PKey::RSA.new 2048
     @pubkey = "#{@key.ssh_type} #{[@key.to_blob].pack('m0')} GAPTOOL_GENERATED_KEY"

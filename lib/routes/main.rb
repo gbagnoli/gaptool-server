@@ -5,6 +5,11 @@ class GaptoolServer < Sinatra::Application
     "You must be lost. Read the instructions."
   end
 
+  get '/redishash' do
+    data = JSON.parse request.body.read
+    rediskeys(data).to_json
+  end
+
   get '/servicebalance/:role/:environment' do
     runlist = balanceservices(params[:role], params[:environment])
     unless runlist.kind_of? Hash
