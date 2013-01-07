@@ -13,7 +13,7 @@ module GaptoolBaseHelpers
       query[key].each do |hkey|
         entry << { hkey => $redit.hget(key, hkey) }
       end
-      result.merge! { key => entry }
+      result.merge!({ key => entry })
     end
     return result
   end
