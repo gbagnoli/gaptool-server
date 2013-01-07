@@ -5,7 +5,7 @@
 
 Gem::Specification.new do |s|
   s.name = "gaptool-server"
-  s.version = "0.2.1"
+  s.version = "0.2.3"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Matt Bailey"]
@@ -34,12 +34,14 @@ Gem::Specification.new do |s|
     "lib/helpers/init.rb",
     "lib/helpers/nicebytes.rb",
     "lib/helpers/partials.rb",
+    "lib/helpers/redis.rb",
     "lib/models/init.rb",
     "lib/models/user.rb",
     "lib/public/css/common.css",
     "lib/public/js/manifest.txt",
     "lib/routes/init.rb",
     "lib/routes/main.rb",
+    "lib/routes/redis.rb",
     "lib/views/hosts.erb",
     "lib/views/init.erb",
     "setup.rb",
