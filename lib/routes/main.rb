@@ -5,9 +5,9 @@ class GaptoolServer < Sinatra::Application
     "You must be lost. Read the instructions."
   end
 
-  get '/redishash' do
+  post '/redishash' do
     data = JSON.parse request.body.read
-    rediskeys(data).to_json
+    redishash(data).to_json
   end
 
   get '/servicebalance/:role/:environment' do

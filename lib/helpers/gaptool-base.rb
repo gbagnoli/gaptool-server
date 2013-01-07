@@ -9,9 +9,9 @@ module GaptoolBaseHelpers
   def redishash(query)
     result = Hash.new
     query.keys.each do |key|
-      entry = Array.new
+      entry = Hash.new
       query[key].each do |hkey|
-        entry << { hkey => $redit.hget(key, hkey) }
+        entry.merge!(hkey => $redis.hget(key, hkey))
       end
       result.merge!({ key => entry })
     end
