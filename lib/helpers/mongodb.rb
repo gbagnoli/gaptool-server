@@ -1,5 +1,4 @@
 # encoding: utf-8
-require 'bson_ext'
 require 'mongo'
 module MongodbHelpers
   def collectioncount(dbcollections)
