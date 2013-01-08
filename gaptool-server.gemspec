@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "gaptool-server"
-  s.version = "0.2.3"
+  s.version = "0.2.4"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Matt Bailey"]
-  s.date = "2013-01-07"
+  s.date = "2013-01-08"
   s.description = "gaptool-server for managing cloud resources"
   s.email = "m@mdb.io"
   s.executables = ["gaptool-server"]
@@ -32,6 +32,7 @@ Gem::Specification.new do |s|
     "lib/app.rb",
     "lib/helpers/gaptool-base.rb",
     "lib/helpers/init.rb",
+    "lib/helpers/mongodb.rb",
     "lib/helpers/nicebytes.rb",
     "lib/helpers/partials.rb",
     "lib/helpers/redis.rb",
@@ -41,6 +42,7 @@ Gem::Specification.new do |s|
     "lib/public/js/manifest.txt",
     "lib/routes/init.rb",
     "lib/routes/main.rb",
+    "lib/routes/mongodb.rb",
     "lib/routes/redis.rb",
     "lib/views/hosts.erb",
     "lib/views/init.erb",
