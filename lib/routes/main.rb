@@ -183,11 +183,21 @@ class GaptoolServer < Sinatra::Application
     out.to_json
   end
 
+  get '/instance/:id' do
+    out = Array.new
+    $redis.hgetall($redis.keys("host:*:*:#{params[:id]}").first).to_json
+  end
+
   get '/hosts/:role/:environment' do
     out = Array.new
-    $redis.keys("host:#{params[:role]}:#{params[:environment]}*").each do |host|
-      out << $redis.hgetall(host)
-    end
+    unless params[:role] == "ALL"
+      $redis.keys("host:#{params[:role]}:#{params[:environment]}*").each do |host|
+        out << $redis.hgetall(host)
+      end
+    else
+      $redis.keys("host:*:#{params[:environment]}:*").each do |host|
+        out << $redis.hgetall(host)
+      end
     out.to_json
   end
 
