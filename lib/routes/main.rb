@@ -198,6 +198,7 @@ class GaptoolServer < Sinatra::Application
       $redis.keys("host:*:#{params[:environment]}:*").each do |host|
         out << $redis.hgetall(host)
       end
+    end
     out.to_json
   end
 
