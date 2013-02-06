@@ -14,11 +14,22 @@ module ServiceHelpers
       return { :inuse => @inuse, :available => @available }
     else
       @all = Hash.new
-      $redis.keys('apikey:inuse:*').each do |service|
-        @all[service.gsub('apikey:inuse:', '')][:inuse] = $redis.lrange("apikey:inuse:#{service}", 0, -1)
-      end
-      $redis.keys('apikey:available:*').each do |service|
-        @all[service][:available] = $redis.lrange("apikey:available:#{service}", 0, -1)
+      $redis.keys('apikey:*').each do |service|
+        if service =~ /:available:/
+          begin
+            @all[service.gsub('apikey:available:', '')][:available] = $redis.lrange(service, 0, -1)
+          rescue
+            @all[service.gsub('apikey:available:', '')] = Hash.new
+            @all[service.gsub('apikey:available:', '')][:available] = $redis.lrange(service, 0, -1)
+          end
+        elsif service =~ /:inuse:/
+          begin
+            @all[service.gsub('apikey:inuse:', '')][:inuse] = $redis.lrange(service, 0, -1)
+          rescue
+            @all[service.gsub('apikey:inuse:', '')] = Hash.new
+            @all[service.gsub('apikey:inuse:', '')][:inuse] = $redis.lrange(service, 0, -1)
+          end
+        end
       end
       return @all
     end
