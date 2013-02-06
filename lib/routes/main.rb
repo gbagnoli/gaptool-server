@@ -21,45 +21,6 @@ class GaptoolServer < Sinatra::Application
     runlist.to_json
   end
 
-  put '/service/:role/:environment' do
-    data = JSON.parse request.body.read
-    count = $redis.incr("service:#{params[:role]}:#{params[:environment]}:#{data['name']}:count")
-    key = "service:#{params[:role]}:#{params[:environment]}:#{data['name']}:#{count}"
-    $redis.hset(key, 'name', data['name'])
-    $redis.hset(key, 'keys', data['keys'])
-    $redis.hset(key, 'weight', data['weight'])
-    $redis.hset(key, 'role', params[:role])
-    $redis.hset(key, 'environment', params[:environment])
-    $redis.hset(key, 'run', data['enabled'])
-    {
-      :role => params[:role],
-      :environment => params[:environment],
-      :service => data['name'],
-      :count => count,
-    }.to_json
-  end
-
-  delete '/service/:role/:environment/:service' do
-    if $redis.get("service:#{params[:role]}:#{params[:environment]}:#{params[:service]}:count") == '0'
-      count = 0
-    else
-      count = $redis.decr("service:#{params[:role]}:#{params[:environment]}:#{params[:service]}:count")
-      service = eval($redis.range("running", 0, -1).grep(/scoring/).last)
-      runservice(service[:hostname], params[:role], params[:environment], params[:service], 'stop')
-      $redis.del("service:#{params[:role]}:#{params[:environment]}:#{params[:service]}:#{count + 1}")
-    end
-    {
-      :role => params[:role],
-      :environment => params[:environment],
-      :service => params[:service],
-      :count => count,
-    }.to_json
-  end
-
-  get '/services' do
-    getservices().to_json
-  end
-
   post '/regenhosts' do
     data = JSON.parse request.body.read
     hostsgen(data['zone'])

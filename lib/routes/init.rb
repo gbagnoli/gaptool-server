@@ -2,3 +2,4 @@
 require_relative 'main'
 require_relative 'redis'
 require_relative 'mongodb'
+require_relative 'services'
