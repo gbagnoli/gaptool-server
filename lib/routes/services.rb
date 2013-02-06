@@ -10,7 +10,7 @@ class GaptoolServer < Sinatra::Application
   end
 
   get '/servicekeys' do
-      svcapi_showkeys(:all).to_json
+    svcapi_showkeys(:all).to_json
   end
 
   post '/servicekeys/release/:service' do
@@ -20,12 +20,12 @@ class GaptoolServer < Sinatra::Application
 
   put '/servicekeys/:service' do
     data = JSON.parse request.body.read
-    svcapi_putkey(params[:service], data['key'])
+    "{\"count\": \"#{svcapi_putkey(params[:service], data['key'])}\"}"
   end
 
   delete '/servicekeys/:service' do
     data = JSON.parse request.body.read
-    svcapi_deletekey(params[:service], data['key'])
+    "{\"count\": \"#{svcapi_deletekey(params[:service], data['key'])}\"}"
   end
 
   put '/service/:role/:environment' do
