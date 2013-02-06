@@ -1,16 +1,16 @@
 # encoding: utf-8
 class GaptoolServer < Sinatra::Application
 
-  get '/servicekeys/get/:service' do
+  get '/servicekeys/use/:service' do
     svcapi_getkey(params[:service])
   end
 
-  get '/servicekeys/list/:service' do
-    unless :service.nil?
-      svcapi_showkeys(params[:service]).to_json
-    else
+  get '/servicekeys/:service' do
+    svcapi_showkeys(params[:service]).to_json
+  end
+
+  get '/servicekeys' do
       svcapi_showkeys(:all).to_json
-    end
   end
 
   post '/servicekeys/release/:service' do
@@ -24,6 +24,7 @@ class GaptoolServer < Sinatra::Application
   end
 
   delete '/servicekeys/:service' do
+    data = JSON.parse request.body.read
     svcapi_deletekey(params[:service], data['key'])
   end
 
