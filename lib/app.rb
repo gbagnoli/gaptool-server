@@ -9,9 +9,10 @@ require 'net/ssh'
 require 'peach'
 
 class GaptoolServer < Sinatra::Application
-  enable :sessions
-  disable :show_exceptions
+  disable :sessions
+  enable :show_exceptions
   enable :raise_errors
+  enable :dump_errors
 
   before do
     error 401 unless $redis.hget('users', env['HTTP_X_GAPTOOL_USER']) == env['HTTP_X_GAPTOOL_KEY']
