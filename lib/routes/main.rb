@@ -75,14 +75,10 @@ class GaptoolServer < Sinatra::Application
     data = JSON.parse request.body.read
     AWS.config(:access_key_id => $redis.hget('config', 'aws_id'), :secret_access_key => $redis.hget('config', 'aws_secret'), :ec2_endpoint => "ec2.#{data['zone']}.amazonaws.com")
     @ec2 = AWS::EC2.new
-    begin
-      @instance = @ec2.instances[data['id']]
-      res = @instance.terminate
-      res = $redis.del($redis.keys("*#{data['id']}"))
-      out = {data['id'] => {'status'=> 'terminated'}}
-    rescue
-      error 404
-    end
+    @instance = @ec2.instances[data['id']]
+    res = @instance.terminate
+    res = $redis.del($redis.keys("*#{data['id']}"))
+    out = {data['id'] => {'status'=> 'terminated'}}
     out.to_json
   end
 
