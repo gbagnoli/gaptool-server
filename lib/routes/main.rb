@@ -66,6 +66,7 @@ class GaptoolServer < Sinatra::Application
     end
     # Add host tag
     instance.add_tag('Name', :value => "#{data['role']}-#{data['environment']}-#{instance.id}")
+    instance.add_tag('gaptool', :value => "yes")
     # Create temporary redis entry for /register to pull the instance id
     $redis.set("instance:#{data['role']}:#{data['environment']}:#{@secret}", instance.id)
     "{\"instance\":\"#{instance.id}\"}"
