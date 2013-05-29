@@ -16,3 +16,6 @@ GaptoolServer.helpers MongodbHelpers
 
 require_relative 'services'
 GaptoolServer.helpers ServiceHelpers
+
+require_relative 'rehash'
+GaptoolServer.helpers RehashHelpers
