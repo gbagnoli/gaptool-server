@@ -58,6 +58,6 @@ module RehashHelpers
         end
       end
     end
-    return "complete"
+    return {"action" => "complete"}
   end
 end
