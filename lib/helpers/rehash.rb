@@ -35,7 +35,7 @@ module RehashHelpers
       @ec2 = AWS::EC2.new(:access_key_id => $redis.hget('config', 'aws_id'), :secret_access_key => $redis.hget('config', 'aws_secret'), :ec2_endpoint => "ec2.#{zone}.amazonaws.com")
       @instances = []
       @ec2.instances.each do |instance|
-        if instance.tags['gaptool'] == 'yes'
+        if instance.tags['gaptool'] == 'yes' && instance.status == :running
           @instances << instance
         end
       end
