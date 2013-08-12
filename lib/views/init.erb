@@ -1,4 +1,5 @@
-apt-get install -y zsh git libssl-dev ruby1.9.1-full build-essential
+apt-get update
+apt-get install -ymq zsh git libssl-dev ruby1.9.1-full build-essential
 gem install --bindir /usr/local/bin --no-ri --no-rdoc chef
 cat << 'EOFKEY' > /root/.ssh/id_rsa
 <%=$redis.hget('config', 'initkey')%>
