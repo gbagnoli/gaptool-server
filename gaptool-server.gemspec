@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "gaptool-server"
-  s.version = "0.4.4"
+  s.version = "0.4.5"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Matt Bailey"]
-  s.date = "2013-06-03"
+  s.date = "2013-08-12"
   s.description = "gaptool-server for managing cloud resources"
   s.email = "m@mdb.io"
   s.executables = ["gaptool-server"]
@@ -57,11 +57,11 @@ Gem::Specification.new do |s|
   s.homepage = "http://github.com/mattbailey/gaptool-server"
   s.licenses = ["MIT"]
   s.require_paths = ["lib"]
-  s.rubygems_version = "1.8.23"
+  s.rubygems_version = "2.0.5"
   s.summary = "gaptool-server for managing cloud resources"
 
   if s.respond_to? :specification_version then
-    s.specification_version = 3
+    s.specification_version = 4
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
       s.add_runtime_dependency(%q<sinatra>, [">= 0"])
