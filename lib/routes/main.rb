@@ -35,9 +35,10 @@ class GaptoolServer < Sinatra::Application
     @secret = (0...8).map{65.+(rand(26)).chr}.join
     data.merge!("secret" => @secret)
     sgid = gt_securitygroup(data['role'], data['environment'], data['zone'])
+    image_id = $redis.hget("amis:#{data['role']}", data['zone'].chop) || $redis.hget("amis", data['zone'].chop)
     if data['mirror']
       instance = @ec2.instances.create(
-        :image_id => $redis.hget("amis", data['zone'].chop),
+        :image_id => image_id,
         :availability_zone => data['zone'],
         :instance_type => data['itype'],
         :key_name => "gaptool",
@@ -56,7 +57,7 @@ class GaptoolServer < Sinatra::Application
       )
     else
       instance = @ec2.instances.create(
-        :image_id => $redis.hget("amis", data['zone'].chop),
+        :image_id => image_id,
         :availability_zone => data['zone'],
         :instance_type => data['itype'],
         :key_name => "gaptool",
