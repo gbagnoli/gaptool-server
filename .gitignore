@@ -52,3 +52,4 @@ tools
 # For rubinius:
 #*.rbc
 Gemfile.lock
+*.gem
