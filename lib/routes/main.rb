@@ -2,7 +2,7 @@
 class GaptoolServer < Sinatra::Application
 
   get '/' do
-    raise "You must be lost. Read the instructions."
+    "You must be lost. Read the instructions."
   end
 
   post '/redishash' do

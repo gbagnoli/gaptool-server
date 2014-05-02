@@ -10,10 +10,10 @@ require 'peach'
 
 class GaptoolServer < Sinatra::Application
   disable :sessions
-
+  enable  :dump_errors
+  
   error do
-    content_type :json
-    {:result => 'error', :message => env['sinatra.error'].message}.to_json
+    {:result => 'error', :message => env['sinatra.error']}.to_json
   end
 
   before do
