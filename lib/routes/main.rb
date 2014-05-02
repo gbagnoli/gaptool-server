@@ -1,12 +1,8 @@
 # encoding: utf-8
 class GaptoolServer < Sinatra::Application
 
-  error do
-    {error: "Sorry there was a nasty error - #{env['sinatra.error']}" }.to_json
-  end
-
   get '/' do
-    "You must be lost. Read the instructions."
+    raise "You must be lost. Read the instructions."
   end
 
   post '/redishash' do
