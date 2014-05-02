@@ -90,8 +90,8 @@ class GaptoolServer < Sinatra::Application
     @ec2 = AWS::EC2.new
     @instance = @ec2.instances[$redis.get("instance:#{data['role']}:#{data['environment']}:#{data['secret']}")]
     hostname = @instance.dns_name
-    delete = $redis.del("instance:#{data['role']}:#{data['environment']}:#{data['secret']}")
-    @apps = Array.new
+    $redis.del("instance:#{data['role']}:#{data['environment']}:#{data['secret']}")
+    @apps = []
     $redis.keys("app:*").each do |app|
       if $redis.hget(app, 'role') == data['role']
         @apps << app.gsub('app:', '')
@@ -119,7 +119,7 @@ class GaptoolServer < Sinatra::Application
   end
 
   get '/hosts' do
-    out = Array.new
+    out = []
     $redis.keys("host:*").each do |host|
       out << $redis.hgetall(host)
     end
@@ -127,7 +127,7 @@ class GaptoolServer < Sinatra::Application
   end
 
   get '/apps' do
-    out = Hash.new
+    out = {}
     $redis.keys("app:*").each do |app|
       out.merge!(app => $redis.hgetall(app))
     end
@@ -135,7 +135,7 @@ class GaptoolServer < Sinatra::Application
   end
 
   get '/hosts/:role' do
-    out = Array.new
+    out = []
     $redis.keys("host:#{params[:role]}:*").each do |host|
       out << $redis.hgetall(host)
     end
@@ -143,12 +143,11 @@ class GaptoolServer < Sinatra::Application
   end
 
   get '/instance/:id' do
-    out = Array.new
     $redis.hgetall($redis.keys("host:*:*:#{params[:id]}").first).to_json
   end
 
   get '/hosts/:role/:environment' do
-    out = Array.new
+    out = []
     unless params[:role] == "ALL"
       $redis.keys("host:#{params[:role]}:#{params[:environment]}*").each do |host|
         out << $redis.hgetall(host)
