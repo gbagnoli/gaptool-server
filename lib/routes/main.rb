@@ -5,28 +5,6 @@ class GaptoolServer < Sinatra::Application
     "You must be lost. Read the instructions."
   end
 
-  post '/redishash' do
-    data = JSON.parse request.body.read
-    redishash(data).to_json
-  end
-
-  get '/servicebalance/:role/:environment' do
-    runlist = balanceservices(params[:role], params[:environment])
-    unless runlist.kind_of? Hash
-      servicestopall(params[:role], params[:environment])
-      runlist.peach do |event|
-        runservice(event[:host][:hostname], params[:role], params[:environment], event[:service][:name], event[:service][:keys], 'start')
-      end
-    end
-    runlist.to_json
-  end
-
-  post '/regenhosts' do
-    data = JSON.parse request.body.read
-    hostsgen(data['zone'])
-    hosts.to_json
-  end
-
   post '/init' do
     data = JSON.parse request.body.read
     AWS.config(:access_key_id => $redis.hget('config', 'aws_id'), :secret_access_key => $redis.hget('config', 'aws_secret'), :ec2_endpoint => "ec2.#{data['zone'].chop}.amazonaws.com")
@@ -169,5 +147,4 @@ class GaptoolServer < Sinatra::Application
     @key = putkey(@host)
     {'hostname' => @host, 'key' => @key, 'pubkey' => @pubkey}.to_json
   end
-
 end

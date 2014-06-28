@@ -27,31 +27,11 @@ Jeweler::Tasks.new do |gem|
 end
 Jeweler::RubygemsDotOrgTasks.new
 
-require 'rake/testtask'
-Rake::TestTask.new(:test) do |test|
-  test.libs << 'lib' << 'test'
-  test.pattern = 'test/**/test_*.rb'
-  test.verbose = true
-end
-
-task :default => :test
-
-require 'rdoc/task'
-Rake::RDocTask.new do |rdoc|
-  version = File.exist?('VERSION') ? File.read('VERSION') : ""
-
-  rdoc.rdoc_dir = 'rdoc'
-  rdoc.title = "gaptool-server #{version}"
-  rdoc.rdoc_files.include('README*')
-  rdoc.rdoc_files.include('lib/**/*.rb')
-end
-
 namespace :dev do
   require 'pry'
   require 'yaml'
   require 'redis'
   require 'aws-sdk'
-  YAML::ENGINE.yamler='syck'
   task :shell do
     $stderr.puts "env vars REDIS_HOST, REDIS_PORT, and REDIS_PASS should all be set or\ndefaults of localhost:6379 with no password will be used"
     ENV['REDIS_HOST'] = 'localhost' unless ENV['REDIS_HOST']
@@ -83,10 +63,9 @@ namespace :config do
   ENV['REDIS_PASS'] = nil unless ENV['REDIS_PASS']
   @redis = Redis.new(:host => ENV['REDIS_HOST'], :port => ENV['REDIS_PORT'], :password => ENV['REDIS_PASS'])
   $stderr.puts "env vars REDIS_HOST, REDIS_PORT, and REDIS_PASS should all be set or\ndefaults of localhost:6379 with no password will be used"
-  YAML::ENGINE.yamler='syck'
 
   task :import do
-    data = YAML::Parser($stdin)
+    data = YAML.load($stdin)
     puts data
   end
   task :delete do

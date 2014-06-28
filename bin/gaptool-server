@@ -1,7 +1,6 @@
 #!/usr/bin/env ruby
 require 'rubygems'
 require 'thin'
-#require 'gaptool-server/app.rb'
 
 # Hijack the thin module to set default options to run in the right place
 module Thin
