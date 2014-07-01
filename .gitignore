@@ -1,4 +1,6 @@
-lib/helpers/server.log
+.env
+thin.log
+thin.pid
 # rcov generated
 coverage
 coverage.data
