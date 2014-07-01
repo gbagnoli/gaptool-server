@@ -17,7 +17,7 @@ class GaptoolServer < Sinatra::Application
   end
 
   not_found do
-      {}
+    {:result => 'error', :message => "Not Found."}.to_json
   end
 
   helpers do
