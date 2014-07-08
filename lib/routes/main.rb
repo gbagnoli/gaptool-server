@@ -1,7 +1,7 @@
 # encoding: utf-8
 class GaptoolServer < Sinatra::Application
 
-  get '/' do
+  get '/', :can => [:admin, :read] do
     "You must be lost. Read the instructions."
   end
 

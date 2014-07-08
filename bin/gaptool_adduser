@@ -1,0 +1,53 @@
+#!/usr/bin/env ruby
+require 'optparse'
+require 'securerandom'
+require 'digest/sha2'
+
+# FIXME
+require File.expand_path(File.join(File.dirname(__FILE__), '..', "lib",
+                                   "models", "init"))
+
+
+options = {
+  :username => nil,
+  :role => nil,
+  :key => nil
+}
+parser = OptionParser.new do |opts|
+  opts.banner = 'Add users to gaptool-server'
+  opts.on('-u', '--user NAME', 'Username (required)') do |u|
+    options[:username] = u
+  end
+  opts.on('-r', '--role ROLE', 'User role (required)') do |r|
+    options[:role] = r
+  end
+  opts.on('-k', '--key KEY', 'User key') do |k|
+    options[:key] = k
+  end
+end
+
+parser.parse!
+
+if options[:username].nil? or options[:role].nil?
+  raise OptionParser::MissingArgument
+end
+
+if options[:key].nil?
+  options[:key] = Digest::SHA2.new << SecureRandom.base64
+  options[:key] = options[:key].to_s
+end
+
+role = Role.with(:name, options[:role])
+unless role
+  role = Role.create(:name => options[:role])
+  puts "Created role #{role.name}"
+end
+
+begin
+  user = User.create :username => options[:username], :key => options[:key], :role => role
+  puts "Created user <#{user.username}> with role <#{user.role.name}> and key <#{user.key}>"
+rescue Ohm::UniqueIndexViolation
+  puts "User #{options[:username]} already exists"
+  exit 1
+end
+
