@@ -9,6 +9,7 @@ gem 'peach'
 gem 'redis'
 gem 'sinatra'
 gem 'sinatra-can'
+gem 'sinatra-contrib'
 gem 'thin'
 
 gemspec

@@ -1,16 +1,11 @@
-class Role < Ohm::Model
-    attribute :name
-    unique :name
-    collection :users, :User
-end
-
 class User < Ohm::Model
     attribute :username
     attribute :key
+    attribute :role
 
-    reference :role, :Role
     unique :username
     index :username
+    index :role
 
     def self.login(username, key)
       user = User.find(:username => username).first
@@ -18,5 +13,9 @@ class User < Ohm::Model
         return false
       end
       user
+    end
+
+    def to_hash
+      return {:username => username, :role => role, :key => key}
     end
 end

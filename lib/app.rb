@@ -1,6 +1,7 @@
 # encoding: utf-8
 require 'sinatra'
 require 'sinatra/can'
+require "sinatra/json"
 require 'json'
 require 'yaml'
 require 'erb'
@@ -12,6 +13,7 @@ require 'peach'
 require_relative 'models/init'
 
 class GaptoolServer < Sinatra::Application
+  helpers Sinatra::JSON
   disable :sessions
   enable  :dump_errors
 
@@ -26,16 +28,28 @@ class GaptoolServer < Sinatra::Application
   end
 
   ability do |usr|
-    can :manage, :all if usr.role.name == 'admin'
+    can :manage, :all if usr.role == 'admin'
     can :read, :all
   end
 
-  error do
-    {:result => 'error', :message => env['sinatra.error']}.to_json
+  error 400 do
+    json({:result => 'error', :message => "Invalid request."})
+  end
+
+  error 401 do
+    json({:result => 'error', :message => 'Unauthorized.'})
+  end
+
+  error 500 do
+    json({:result => 'error', :message => 'Internal Error.'})
+  end
+
+  error 409 do
+    json({:result => 'error', :message => 'Conflict.'})
   end
 
   not_found do
-    {:result => 'error', :message => "Not Found."}.to_json
+    json({:result => 'error', :message => "Not Found."})
   end
 end
 

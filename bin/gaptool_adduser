@@ -37,17 +37,10 @@ if options[:key].nil?
   options[:key] = options[:key].to_s
 end
 
-role = Role.with(:name, options[:role])
-unless role
-  role = Role.create(:name => options[:role])
-  puts "Created role #{role.name}"
-end
-
 begin
-  user = User.create :username => options[:username], :key => options[:key], :role => role
-  puts "Created user <#{user.username}> with role <#{user.role.name}> and key <#{user.key}>"
+  user = User.create :username => options[:username], :key => options[:key], :role => options[:role]
+  puts "Created user <#{user.username}> with role <#{user.role}> and key <#{user.key}>"
 rescue Ohm::UniqueIndexViolation
   puts "User #{options[:username]} already exists"
   exit 1
 end
-
