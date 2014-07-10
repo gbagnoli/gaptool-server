@@ -9,8 +9,11 @@ rescue Bundler::BundlerError => e
   $stderr.puts "Run `bundle install` to install missing gems"
   exit e.status_code
 end
+
 require 'rake'
 require 'rake/testtask'
+
+ENV['GT_REDIS_DB'] = ENV['GT_REDIS_DB'] || '13'
 
 Rake::TestTask.new do |t|
   t.libs << "test"
