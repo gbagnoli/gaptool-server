@@ -1,18 +1,15 @@
-require 'test/unit'
-require 'rack/test'
 require_relative 'init'
+class UserAPITests < GaptoolServerTestCase
 
-class UserAPITests < Test::Unit::TestCase
-  include Rack::Test::Methods
+    def test_unauth
+      get '/'
+      assert last_response.status == 401
 
-  def app
-    GaptoolServer.new
-  end
+    end
 
-  def test_unauth
-    get '/'
-    assert last_response.status == 401
-    #assert_equal 'You must be lost. Read the instructions.', last_response.body
-  end
-
+    def test_root_auth
+      get '/', {}, auth_headers_for(@admin)
+      assert last_response.status == 200
+      assert_equal 'You must be lost. Read the instructions.', last_response.body
+    end
 end
